@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 99.2%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 222 47% 18%;
+    --primary-foreground: 0 0% 99%;
+    --secondary: 215 25% 95%;
+    --secondary-foreground: 222 47% 18%;
+    --muted: 215 20% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 221 83% 53%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 215 20% 91%;
+    --input: 215 20% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.5rem;
+    --gold: 33 100% 37%;
+    --font-heading: 'IBM Plex Serif', Georgia, serif;
+    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'IBM Plex Serif', Georgia, serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 222 47% 18%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 215 20% 95%;
+    --sidebar-accent-foreground: 222 47% 18%;
+    --sidebar-border: 215 20% 91%;
+    --sidebar-ring: 221 83% 53%;
+  }
+
+  .dark {
+    --background: 222 47% 6%;
+    --foreground: 215 20% 95%;
+    --card: 222 47% 8%;
+    --card-foreground: 215 20% 95%;
+    --popover: 222 47% 8%;
+    --popover-foreground: 215 20% 95%;
+    --primary: 215 20% 95%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 215 20% 95%;
+    --muted: 222 30% 14%;
+    --muted-foreground: 215 16% 60%;
+    --accent: 221 83% 53%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 222 30% 18%;
+    --input: 222 30% 18%;
+    --ring: 221 83% 53%;
+    --sidebar-background: 222 47% 6%;
+    --sidebar-foreground: 215 20% 95%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 30% 14%;
+    --sidebar-accent-foreground: 215 20% 95%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 221 83% 53%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #0F172A;
+    background-color: #FDFDFD;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+
+/* Vanishing Nav */
+.nav-hidden {
+  transform: translateY(-100%);
+}
+.nav-visible {
+  transform: translateY(0);
+}
+
+/* Star animations */
+@keyframes starPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.star-pulse {
+  animation: starPulse 0.3s ease-in-out;
+}
+
+/* Odometer roll */
+@keyframes odometerRoll {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.odometer-roll {
+  animation: odometerRoll 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Card elevation on focus */
+@keyframes cardElevate {
+  from { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  to { box-shadow: 0 8px 32px rgba(30, 41, 59, 0.12); }
+}
+
+/* DOI seal glow */
+@keyframes doiGlow {
+  0% { filter: drop-shadow(0 0 0px #2563EB); }
+  100% { filter: drop-shadow(0 0 6px #2563EB); }
+}
+
+.doi-seal:hover {
+  animation: doiGlow 0.3s forwards;
+}
+
+/* Scroll-based card fade */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card-enter {
+  animation: slideUp 0.4s ease-out forwards;
+}

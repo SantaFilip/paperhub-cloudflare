@@ -1,0 +1,46 @@
+name = "paperhub"
+main = "worker/index.js"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The built SPA. `not_found_handling` makes client-side routes like
+# /presentation/:id resolve to index.html instead of 404ing.
+# Keep the workers.dev address alive as a fallback. Adding a [[routes]] entry
+# silently turns it off otherwise.
+workers_dev = true
+
+# The live domain. Cloudflare owns the DNS record for a custom domain.
+[[routes]]
+pattern = "paperhub.io"
+custom_domain = true
+
+# The old www CNAME pointed at Base44 and did not survive the nameserver move,
+# so www would otherwise fail to resolve.
+[[routes]]
+pattern = "www.paperhub.io"
+custom_domain = true
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "paperhub"
+database_id = "e9af5b0f-5fef-4966-92bc-ed0491d94e73"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "FILES"
+bucket_name = "paperhub-files"
+
+[vars]
+# Base for e-mail links and upload URLs.
+APP_URL = "https://paperhub.io"
+MAIL_FROM = "PaperHub <noreply@paperhub.io>"
+
+# Secrets — set with `wrangler secret put <NAME>`, never in this file:
+#   JWT_SECRET         signing key for session tokens (required)
+#   RESEND_API_KEY     transactional email (required for signup + password reset)
+#   ANTHROPIC_API_KEY  optional: licence research + scanned-PDF text extraction

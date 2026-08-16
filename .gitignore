@@ -1,0 +1,39 @@
+# dependencies / build output
+node_modules
+dist
+dist-ssr
+*.local
+
+# wrangler local state (local D1 + R2 contents)
+.wrangler
+.dev.vars
+
+# Base44 export: contains user data and every downloaded upload.
+# Keep it off the repo — re-export from Base44 if you need it again.
+data/
+
+# Credential notes that live in this folder. Secrets belong in
+# `wrangler secret put`, never in a file next to the source.
+*.docx
+*.doc
+*.rtf
+*.odt
+secrets*
+*credential*
+*api-key*
+*API-Key*
+
+# logs
+*.log
+npm-debug.log*
+
+# editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
