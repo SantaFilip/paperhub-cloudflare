@@ -40,6 +40,7 @@ export default function Navigation() {
 
   return (
     <header
+      onFocus={() => setVisible(true)}
       className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-300 ease-in-out ${
         visible ? "translate-y-0" : "-translate-y-full"
       }`}
@@ -48,8 +49,8 @@ export default function Navigation() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center h-16 gap-4">
             {/* Logo */}
-            <Link to="/landing" className="flex items-center gap-2 flex-shrink-0 group">
-              <div className="w-8 h-8 bg-[#1E293B] rounded flex items-center justify-center">
+            <Link to="/landing" className="flex items-center gap-2 flex-shrink-0 group" aria-label={lang === "de" ? "PaperHub – zur Startseite" : "PaperHub – home"}>
+              <div className="w-8 h-8 bg-[#1E293B] rounded flex items-center justify-center" aria-hidden="true">
                 <PresentationIcon className="w-4 h-4 text-white" />
               </div>
               <span className="font-heading font-semibold text-[#0F172A] text-lg tracking-tight">
@@ -58,23 +59,25 @@ export default function Navigation() {
             </Link>
 
             {/* Search — desktop */}
-            <form onSubmit={handleSearch} className="flex-1 max-w-xl mx-auto hidden md:flex">
+            <form role="search" onSubmit={handleSearch} className="flex-1 max-w-xl mx-auto hidden md:flex">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label={lang === "de" ? "Präsentationen durchsuchen" : "Search presentations"}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t.searchPlaceholder}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-100 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white transition-all text-[#0F172A] placeholder-slate-400"
+                  className="w-full pl-9 pr-4 py-2 text-sm bg-slate-100 border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white transition-all text-[#0F172A] placeholder-slate-500"
                 />
               </div>
             </form>
 
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-1">
+            <nav aria-label={lang === "de" ? "Hauptnavigation" : "Main navigation"} className="hidden md:flex items-center gap-1">
               <Link
                 to="/browse"
+                aria-current={location.pathname === "/browse" ? "page" : undefined}
                 className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   location.pathname === "/browse"
                     ? "text-[#2563EB] bg-blue-50"
@@ -85,6 +88,7 @@ export default function Navigation() {
               </Link>
               <Link
                 to="/upload"
+                aria-current={location.pathname === "/upload" ? "page" : undefined}
                 className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                   location.pathname === "/upload"
                     ? "text-[#2563EB] bg-blue-50"
@@ -94,16 +98,24 @@ export default function Navigation() {
                 {t.upload}
               </Link>
               {/* Language switcher */}
-              <div className="flex items-center border border-slate-200 rounded-md overflow-hidden ml-1">
+              <div role="group" aria-label={lang === "de" ? "Sprache wählen" : "Choose language"} className="flex items-center border border-slate-300 rounded-md overflow-hidden ml-1">
                 <button
+                  type="button"
                   onClick={() => setLang("en")}
-                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${lang === "en" ? "bg-[#1E293B] text-white" : "text-slate-500 hover:bg-slate-100"}`}
+                  aria-pressed={lang === "en"}
+                  lang="en"
+                  aria-label="English"
+                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${lang === "en" ? "bg-[#1E293B] text-white" : "text-slate-700 hover:bg-slate-100"}`}
                 >
                   EN
                 </button>
                 <button
+                  type="button"
                   onClick={() => setLang("de")}
-                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${lang === "de" ? "bg-[#1E293B] text-white" : "text-slate-500 hover:bg-slate-100"}`}
+                  aria-pressed={lang === "de"}
+                  lang="de"
+                  aria-label="Deutsch"
+                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${lang === "de" ? "bg-[#1E293B] text-white" : "text-slate-700 hover:bg-slate-100"}`}
                 >
                   DE
                 </button>
@@ -114,16 +126,24 @@ export default function Navigation() {
             {/* Mobile: Language + AccountMenu + Hamburger */}
              <div className="md:hidden flex items-center gap-2 ml-auto">
                {/* Language switcher */}
-               <div className="flex items-center border border-slate-200 rounded-md overflow-hidden">
+               <div role="group" aria-label={lang === "de" ? "Sprache wählen" : "Choose language"} className="flex items-center border border-slate-300 rounded-md overflow-hidden">
                  <button
+                   type="button"
                    onClick={() => setLang("en")}
-                   className={`px-2 py-1 text-xs font-medium transition-colors ${lang === "en" ? "bg-[#1E293B] text-white" : "text-slate-500 hover:bg-slate-100"}`}
+                   aria-pressed={lang === "en"}
+                   lang="en"
+                   aria-label="English"
+                   className={`px-2.5 py-1.5 min-w-[32px] text-xs font-medium transition-colors ${lang === "en" ? "bg-[#1E293B] text-white" : "text-slate-700 hover:bg-slate-100"}`}
                  >
                    EN
                  </button>
                  <button
+                   type="button"
                    onClick={() => setLang("de")}
-                   className={`px-2 py-1 text-xs font-medium transition-colors ${lang === "de" ? "bg-[#1E293B] text-white" : "text-slate-500 hover:bg-slate-100"}`}
+                   aria-pressed={lang === "de"}
+                   lang="de"
+                   aria-label="Deutsch"
+                   className={`px-2.5 py-1.5 min-w-[32px] text-xs font-medium transition-colors ${lang === "de" ? "bg-[#1E293B] text-white" : "text-slate-700 hover:bg-slate-100"}`}
                  >
                    DE
                  </button>
@@ -131,10 +151,14 @@ export default function Navigation() {
                {/* AccountMenu on mobile */}
                <AccountMenu user={user} />
                <button
+                 type="button"
                  onClick={() => setMobileOpen(!mobileOpen)}
-                 className="p-2 rounded-md text-slate-600 hover:bg-slate-100"
+                 aria-expanded={mobileOpen}
+                 aria-controls="mobile-menu"
+                 aria-label={mobileOpen ? (lang === "de" ? "Menü schließen" : "Close menu") : (lang === "de" ? "Menü öffnen" : "Open menu")}
+                 className="p-2 rounded-md text-slate-700 hover:bg-slate-100"
                >
-                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                 {mobileOpen ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
                </button>
              </div>
           </div>
@@ -142,12 +166,13 @@ export default function Navigation() {
 
         {/* Mobile Menu — no auth buttons */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-slate-200 bg-[#FDFDFD] px-4 py-4 space-y-2">
-            <form onSubmit={handleSearch} className="mb-3">
+          <nav id="mobile-menu" aria-label={lang === "de" ? "Mobile Navigation" : "Mobile navigation"} className="md:hidden border-t border-slate-200 bg-[#FDFDFD] px-4 py-4 space-y-2">
+            <form role="search" onSubmit={handleSearch} className="mb-3">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
                 <input
-                  type="text"
+                  type="search"
+                  aria-label={lang === "de" ? "Präsentationen durchsuchen" : "Search presentations"}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t.searchPlaceholder}
@@ -158,7 +183,7 @@ export default function Navigation() {
             <Link to="/browse" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md">{t.discover}</Link>
             <Link to="/upload" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md">{t.upload}</Link>
             {user && <Link to="/profile" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-md">{t.profile}</Link>}
-          </div>
+          </nav>
         )}
       </div>
     </header>

@@ -144,3 +144,51 @@
 .card-enter {
   animation: slideUp 0.4s ease-out forwards;
 }
+/* ---------------------------------------------------------------------------
+   Accessibility (WCAG 2.2 AA / BITV 2.0)
+   --------------------------------------------------------------------------- */
+
+/* A clearly visible keyboard focus on every interactive element (2.4.7, 2.4.13). */
+@layer base {
+  :focus-visible {
+    outline: 3px solid #1D4ED8;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Focused elements never hide under the fixed header (2.4.11). */
+  html {
+    scroll-padding-top: 5rem;
+  }
+
+  /* Programmatic focus targets (e.g. <main> after navigation) get no ring. */
+  [tabindex="-1"]:focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* Custom drop zones hide the native file input; show focus on the zone. */
+.file-dropzone:focus-within {
+  outline: 3px solid #1D4ED8;
+  outline-offset: 2px;
+}
+
+/* Respect the operating system's reduced-motion setting (2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Links inside running text are underlined, so they are not told apart by
+   colour alone (1.4.1). Button-like links carry a background and are skipped. */
+p a:not([class*="bg-"]),
+li a:not([class*="bg-"]) {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

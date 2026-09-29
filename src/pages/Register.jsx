@@ -29,7 +29,7 @@ export default function Register() {
     e.preventDefault();
     setError("");
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(lang === "de" ? "Die Passwörter stimmen nicht überein." : "Passwords do not match");
       return;
     }
     if (!consentPrivacy || !consentTerms) {
@@ -41,7 +41,7 @@ export default function Register() {
       await api.auth.register({ email, password });
       setShowOtp(true);
     } catch (err) {
-      setError(err.message || "Registration failed");
+      setError(err.message || (lang === "de" ? "Registrierung fehlgeschlagen." : "Registration failed"));
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function Register() {
       }
       window.location.href = "/";
     } catch (err) {
-      setError(err.message || "Invalid verification code");
+      setError(err.message || (lang === "de" ? "Ungültiger Bestätigungscode." : "Invalid verification code"));
     } finally {
       setLoading(false);
     }
@@ -71,11 +71,11 @@ export default function Register() {
     try {
       await api.auth.resendOtp(email);
       toast({
-        title: "Code sent",
-        description: "Check your email for the new code.",
+        title: lang === "de" ? "Code gesendet" : "Code sent",
+        description: lang === "de" ? "Sieh in deinem Postfach nach dem neuen Code." : "Check your email for the new code.",
       });
     } catch (err) {
-      setError(err.message || "Failed to resend code");
+      setError(err.message || (lang === "de" ? "Code konnte nicht erneut gesendet werden." : "Failed to resend code"));
     }
   };
 
@@ -83,11 +83,11 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
+        title={lang === "de" ? "E-Mail bestätigen" : "Verify your email"}
+        subtitle={lang === "de" ? `Wir haben einen Code an ${email} gesendet` : `We sent a code to ${email}`}
       >
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div role="alert" className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
             {error}
           </div>
         )}
@@ -98,6 +98,7 @@ export default function Register() {
             onChange={setOtpCode}
             autoFocus
             autoComplete="one-time-code"
+            aria-label={lang === "de" ? "6-stelliger Bestätigungscode" : "6-digit verification code"}
           >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
@@ -116,17 +117,17 @@ export default function Register() {
         >
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Verifying...
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+              {lang === "de" ? "Wird geprüft…" : "Verifying…"}
             </>
           ) : (
-            "Verify"
+            lang === "de" ? "Bestätigen" : "Verify"
           )}
         </Button>
         <p className="text-center text-sm text-muted-foreground mt-4">
-          Didn't receive the code?{" "}
-          <button onClick={handleResend} className="text-primary font-medium hover:underline">
-            Resend
+          {lang === "de" ? "Keinen Code erhalten?" : "Didn't receive the code?"}{" "}
+          <button type="button" onClick={handleResend} className="text-primary font-medium hover:underline">
+            {lang === "de" ? "Erneut senden" : "Resend"}
           </button>
         </p>
       </AuthLayout>
@@ -136,27 +137,28 @@ export default function Register() {
   return (
     <AuthLayout
       icon={UserPlus}
-      title="Create your account"
-      subtitle="Sign up to get started"
+      title={lang === "de" ? "Konto erstellen" : "Create your account"}
+      subtitle={lang === "de" ? "Registriere dich, um loszulegen" : "Sign up to get started"}
       footer={
         <Link to="/login" className="block w-full bg-[#1E293B] text-white text-center font-medium py-3 rounded-lg hover:bg-slate-700 transition-colors">
-          Already have an account? Log in
+          {lang === "de" ? "Schon ein Konto? Anmelden" : "Already have an account? Log in"}
         </Link>
       }
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div role="alert" className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="fullname">Vollständiger Name</Label>
+          <Label htmlFor="fullname">{lang === "de" ? "Vollständiger Name" : "Full name"}</Label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="fullname"
+              aria-describedby="fullname-hint"
               type="text"
               autoComplete="name"
               autoFocus
@@ -167,20 +169,21 @@ export default function Register() {
               required
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Dein echter Name wird als öffentlicher Nutzername (Anmeldename) verwendet, z.B. /u/Filip_Sudermann.
+          <p id="fullname-hint" className="text-xs text-muted-foreground">
+            {lang === "de"
+              ? "Dein echter Name wird als öffentlicher Nutzername (Anmeldename) verwendet, z.B. /u/Filip_Sudermann."
+              : "Your real name is used as your public username, e.g. /u/Filip_Sudermann."}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{lang === "de" ? "E-Mail" : "Email"}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus
-              placeholder="you@example.com"
+              placeholder={lang === "de" ? "du@beispiel.de" : "you@example.com"}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="pl-10 h-12"
@@ -189,14 +192,14 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{lang === "de" ? "Passwort" : "Password"}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="password"
               type="password"
               autoComplete="new-password"
-              placeholder="••••••••"
+              placeholder=""
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="pl-10 h-12"
@@ -205,14 +208,14 @@ export default function Register() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">{lang === "de" ? "Passwort wiederholen" : "Confirm password"}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="confirm"
               type="password"
               autoComplete="new-password"
-              placeholder="••••••••"
+              placeholder=""
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 h-12"
@@ -222,18 +225,18 @@ export default function Register() {
         </div>
         <div className="space-y-3 pt-2">
           <label className="flex items-start gap-2 cursor-pointer">
-            <input type="checkbox" checked={consentPrivacy} onChange={(e) => setConsentPrivacy(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0" />
-            <span className="text-xs text-slate-600">
+            <input type="checkbox" checked={consentPrivacy} onChange={(e) => setConsentPrivacy(e.target.checked)} className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0" />
+            <span className="text-xs text-slate-700">
               {lang === "de" ? "Ich habe die " : "I have read the "}
-              <Link to="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-[#2563EB] hover:underline font-medium">{lang === "de" ? "Datenschutzerklärung" : "Privacy Policy"}</Link>
+              <Link to="/datenschutz" target="_blank" rel="noopener noreferrer" className="text-[#2563EB] hover:underline font-medium">{lang === "de" ? "Datenschutzerklärung" : "Privacy Policy"}<span className="sr-only">{lang === "de" ? " (öffnet in neuem Tab)" : " (opens in a new tab)"}</span></Link>
               {lang === "de" ? " gelesen und akzeptiert. *" : " and accept it. *"}
             </span>
           </label>
           <label className="flex items-start gap-2 cursor-pointer">
-            <input type="checkbox" checked={consentTerms} onChange={(e) => setConsentTerms(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0" />
-            <span className="text-xs text-slate-600">
+            <input type="checkbox" checked={consentTerms} onChange={(e) => setConsentTerms(e.target.checked)} className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0" />
+            <span className="text-xs text-slate-700">
               {lang === "de" ? "Ich stimme den " : "I agree to the "}
-              <Link to="/agb" target="_blank" rel="noopener noreferrer" className="text-[#2563EB] hover:underline font-medium">{lang === "de" ? "Nutzungsbedingungen (AGB)" : "Terms of Use"}</Link>
+              <Link to="/agb" target="_blank" rel="noopener noreferrer" className="text-[#2563EB] hover:underline font-medium">{lang === "de" ? "Nutzungsbedingungen (AGB)" : "Terms of Use"}<span className="sr-only">{lang === "de" ? " (öffnet in neuem Tab)" : " (opens in a new tab)"}</span></Link>
               {lang === "de" ? " zu. *" : ". *"}
             </span>
           </label>
@@ -241,11 +244,11 @@ export default function Register() {
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading || !consentPrivacy || !consentTerms}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Creating account...
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+              {lang === "de" ? "Konto wird erstellt…" : "Creating account…"}
             </>
           ) : (
-            "Create account"
+            lang === "de" ? "Konto erstellen" : "Create account"
           )}
         </Button>
       </form>

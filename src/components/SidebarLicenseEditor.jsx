@@ -23,6 +23,7 @@ export default function SidebarLicenseEditor({ presentation, lang, licenses, onS
   return (
     <div className="space-y-2">
       <select
+        aria-label={lang === "de" ? "Lizenz der Präsentation" : "Presentation license"}
         value={selected}
         onChange={(e) => { setSelected(e.target.value); setSaved(false); }}
         className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -40,7 +41,7 @@ export default function SidebarLicenseEditor({ presentation, lang, licenses, onS
       </select>
       {!presentation.is_author && presentation.paper_license && (
         <p className="text-xs text-amber-700 flex items-center gap-1">
-          <AlertCircle className="w-3 h-3 flex-shrink-0" />
+          <AlertCircle className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
           {lang === "de"
             ? `Nicht freizügiger als Paper-Lizenz „${presentation.paper_license}"`
             : `Cannot be more permissive than paper license "${presentation.paper_license}"`}
@@ -49,17 +50,18 @@ export default function SidebarLicenseEditor({ presentation, lang, licenses, onS
 
       {hasChanged && (
         <button
+          type="button"
           onClick={handleSave}
           disabled={saving}
           className="w-full flex items-center justify-center gap-1.5 py-2 bg-[#2563EB] text-white text-xs font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
         >
-          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : null}
           {lang === "de" ? "Lizenz speichern" : "Save license"}
         </button>
       )}
 
       {saved && (
-        <div className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+        <div className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
           <CheckCircle className="w-3.5 h-3.5" />
           {lang === "de" ? "Gespeichert" : "Saved"}
         </div>

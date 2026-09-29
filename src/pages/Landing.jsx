@@ -1,3 +1,4 @@
+import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 import { BookOpen, Star, Download, MessageSquare, FileText, ChevronRight, Search } from "lucide-react";
 import PresentationIcon from "@/components/PresentationIcon";
@@ -20,7 +21,7 @@ function PaperCard({ paper, style, rotate }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-slate-800 leading-tight truncate">{paper.title}</p>
-          <span className="text-[10px] text-blue-600 font-medium">{paper.discipline}</span>
+          <span className="text-xs text-blue-600 font-medium">{paper.discipline}</span>
         </div>
       </div>
       {/* Slide strip */}
@@ -34,15 +35,15 @@ function PaperCard({ paper, style, rotate }) {
       {/* Stats row */}
       <div className="flex items-center gap-3 mb-3 pb-3 border-b border-slate-100">
         <div className="flex items-center gap-1">
-          <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+          <Star className="w-3 h-3 text-amber-700 fill-amber-500" />
           <span className="text-xs font-bold text-slate-700">{paper.rating}</span>
         </div>
         <div className="flex items-center gap-1">
-          <Download className="w-3 h-3 text-slate-400" />
+          <Download className="w-3 h-3 text-slate-500" />
           <span className="text-xs text-slate-500">{paper.downloads}</span>
         </div>
         <div className="flex items-center gap-1 ml-auto">
-          <FileText className="w-3 h-3 text-slate-400" />
+          <FileText className="w-3 h-3 text-slate-500" />
           <span className="text-xs text-slate-500">{paper.slides} slides</span>
         </div>
       </div>
@@ -50,9 +51,9 @@ function PaperCard({ paper, style, rotate }) {
       <div className="bg-slate-50 border border-slate-100 rounded-lg p-2.5">
         <div className="flex items-center gap-1.5 mb-1">
           <MessageSquare className="w-3 h-3 text-blue-500" />
-          <span className="text-[10px] font-semibold text-slate-600">{paper.reviewer}</span>
+          <span className="text-xs font-semibold text-slate-600">{paper.reviewer}</span>
         </div>
-        <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">"{paper.comment}"</p>
+        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">"{paper.comment}"</p>
       </div>
     </div>
   );
@@ -88,14 +89,22 @@ export default function Landing() {
         </div>
         <div className="flex items-center gap-3">
           {/* Language switcher */}
-          <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-white">
+          <div role="group" aria-label={lang === "de" ? "Sprache wählen" : "Choose language"} className="flex items-center border border-slate-300 rounded-md overflow-hidden bg-white">
             <button
+              type="button"
               onClick={() => setLang("en")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${lang === "en" ? "bg-[#1E293B] text-white" : "text-slate-500 hover:bg-slate-100"}`}
+              aria-pressed={lang === "en"}
+              lang="en"
+              aria-label="English"
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${lang === "en" ? "bg-[#1E293B] text-white" : "text-slate-700 hover:bg-slate-100"}`}
             >EN</button>
             <button
+              type="button"
               onClick={() => setLang("de")}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors ${lang === "de" ? "bg-[#1E293B] text-white" : "text-slate-500 hover:bg-slate-100"}`}
+              aria-pressed={lang === "de"}
+              lang="de"
+              aria-label="Deutsch"
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${lang === "de" ? "bg-[#1E293B] text-white" : "text-slate-700 hover:bg-slate-100"}`}
             >DE</button>
           </div>
           <Link
@@ -108,7 +117,7 @@ export default function Landing() {
       </header>
 
       {/* Main content */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
+      <main id="main-content" tabIndex={-1} className="focus:outline-none relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
         {/* Badge */}
         <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full text-xs font-medium text-blue-700 mb-6">
           <Search className="w-3 h-3" />
@@ -174,15 +183,15 @@ export default function Landing() {
             </div>
           ))}
         </div>
+        {/* Sign-in hint */}
+        <p className="mt-16 text-center text-sm text-slate-600">
+          {lang === "de" ? "Bereits registriert?" : "Already have an account?"}{" "}
+          <Link to="/login" className="text-[#1D4ED8] font-medium">
+            {t.signIn}
+          </Link>
+        </p>
       </main>
-
-      {/* Footer auth links */}
-      <footer className="relative z-10 text-center py-6 text-sm text-slate-500">
-        {lang === "de" ? "Bereits registriert?" : "Already have an account?"}{" "}
-        <Link to="/login" className="text-[#2563EB] font-medium hover:underline">
-          {t.signIn}
-        </Link>
-      </footer>
+      <div className="relative z-10"><Footer /></div>
     </div>
   );
 }

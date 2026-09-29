@@ -4,8 +4,10 @@ import { Download, ChevronRight, Tag } from "lucide-react";
 import StarRating from "./StarRating";
 import LicenseBadge from "./LicenseBadge";
 import { useLang, disciplineLabelDE } from "@/lib/LanguageContext";
+import { hidesThumbnail } from "@/lib/licenseUtils";
 
 function PaperTitle({ title, expanded, onExpand }) {
+  const { lang } = useLang();
   const clipRef = useRef(null);
   const [displayText, setDisplayText] = useState(title);
   const [isClamped, setIsClamped] = useState(false);
@@ -51,22 +53,27 @@ function PaperTitle({ title, expanded, onExpand }) {
 
   if (expanded) {
     return (
-      <div className="text-sm text-slate-500 mb-2">
-        <span className="text-slate-400">Paper: </span>
+      <div className="text-sm text-slate-600 mb-2">
+        <span>Paper: </span>
         <span>{title}</span>
       </div>
     );
   }
 
   return (
-    <div className="text-sm text-slate-500 mb-2">
-      <span className="text-slate-400">Paper: </span>
-      <span style={{ display: "inline" }}>{displayText}</span>
+    <div className="text-sm text-slate-600 mb-2">
+      <span>Paper: </span>
+      {/* Screen readers always get the full title; the clipping is visual only. */}
+      <span aria-hidden={isClamped || undefined} style={{ display: "inline" }}>{displayText}</span>
+      {isClamped && <span className="sr-only">{title}</span>}
       {isClamped && (
         <button
-          className="inline text-[#2563EB] hover:text-blue-700 font-semibold text-xs ml-0.5"
+          type="button"
+          className="relative z-10 inline text-[#1D4ED8] hover:text-blue-800 font-semibold text-xs ml-0.5 px-1 min-h-[24px]"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onExpand(); }}
-          title="Expand"
+          aria-hidden="true"
+          tabIndex={-1}
+          title={lang === "de" ? "Vollständigen Titel anzeigen" : "Show full title"}
         >
           •••
         </button>
@@ -107,20 +114,23 @@ export default function PresentationCard({ presentation, index = 0 }) {
   };
 
   const disciplineClass = disciplines[presentation.discipline] || "bg-slate-100 text-slate-700";
+  const showThumb = !!presentation.thumbnail_url && !hidesThumbnail(presentation.license);
+  const noThumbText = hidesThumbnail(presentation.license)
+    ? (lang === "de" ? "Keine Vorschau (Lizenz)" : "No preview (license)")
+    : (lang === "de" ? "Keine Vorschau" : "No preview");
   const tags = presentation.tags
     ? presentation.tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3)
     : [];
 
   return (
-    <Link
-      to={`/presentation/${presentation.id}`}
+    <div
       className="block"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{ animationDelay: `${index * 60}ms` }}
     >
       <article
-        className={`card-enter relative flex bg-white border rounded-xl overflow-hidden transition-all duration-300 ${
+        className={`card-enter relative flex focus-within:ring-2 focus-within:ring-[#1D4ED8] bg-white border rounded-xl overflow-hidden transition-all duration-300 ${
           hovered
             ? "shadow-xl border-slate-300 -translate-y-0.5"
             : "shadow-sm border-slate-200"
@@ -128,6 +138,7 @@ export default function PresentationCard({ presentation, index = 0 }) {
       >
         {/* Left accent bar */}
         <div
+          aria-hidden="true"
           className={`w-1.5 flex-shrink-0 transition-all duration-300 ${
             hovered ? "bg-[#2563EB]" : "bg-slate-200"
           }`}
@@ -144,18 +155,24 @@ export default function PresentationCard({ presentation, index = 0 }) {
           </div>
 
           {/* Title — full width above thumbnail on mobile */}
+          {/* The title is the card's link; its ::after stretches over the whole card. */}
           <h2 className="font-heading text-lg lg:text-xl font-semibold text-[#0F172A] leading-snug mb-3">
-            {presentation.title}
+            <Link
+              to={`/presentation/${presentation.id}`}
+              className="after:absolute after:inset-0 after:content-[''] focus:outline-none"
+            >
+              {presentation.title}
+            </Link>
           </h2>
 
           {/* Thumbnail (mobile only, full width between title and paper title) */}
-          {presentation.thumbnail_url ? (
+          {showThumb ? (
             <div className="sm:hidden rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mb-3 w-full" style={{ aspectRatio: "16/9", maxHeight: "140px" }}>
               <img src={presentation.thumbnail_url} alt="" className="w-full h-full object-cover" />
             </div>
           ) : (
             <div className="sm:hidden rounded-lg bg-slate-100 border border-slate-200 mb-3 w-full flex items-center justify-center" style={{ aspectRatio: "16/9", maxHeight: "140px" }}>
-              <span className="text-xs text-slate-400 font-medium">No thumbnail</span>
+              <span className="text-xs text-slate-600 font-medium">{noThumbText}</span>
             </div>
           )}
 
@@ -166,7 +183,7 @@ export default function PresentationCard({ presentation, index = 0 }) {
 
           {/* DOI */}
           {presentation.doi && (
-            <p className="text-xs text-slate-400 font-mono mb-3 truncate">
+            <p className="text-xs text-slate-500 font-mono mb-3 truncate">
               DOI: {presentation.doi}
             </p>
           )}
@@ -174,7 +191,8 @@ export default function PresentationCard({ presentation, index = 0 }) {
           {/* Tags */}
           {tags.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap mb-4">
-              <Tag className="w-3 h-3 text-slate-400" />
+              <Tag className="w-3 h-3 text-slate-500" aria-hidden="true" />
+              <span className="sr-only">Tags:</span>
               {tags.map((tag) => (
                 <span
                   key={tag}
@@ -195,15 +213,17 @@ export default function PresentationCard({ presentation, index = 0 }) {
             </span>
             {presentation.has_nd_restriction && !presentation.is_author ? (
               <span className="ml-2 text-xs text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full font-medium">
-                🚫 ND
+                <span aria-hidden="true">🚫 ND</span>
+                <span className="sr-only">{lang === "de" ? "Nicht verfügbar – ND-Lizenz" : "Not available – ND license"}</span>
               </span>
             ) : !presentation.file_url ? (
               <span className="ml-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
-                {lang === "de" ? "⚠ Nur Metadaten" : "⚠ Metadata only"}
+                <span aria-hidden="true">⚠ </span>{lang === "de" ? "Nur Metadaten" : "Metadata only"}
               </span>
             ) : (
-              <div className="flex items-center gap-1 text-slate-500 ml-2">
-                <Download className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-1 text-slate-600 ml-2">
+                <Download className="w-3.5 h-3.5" aria-hidden="true" />
+                <span className="sr-only">Downloads:</span>
                 <span className={`text-sm tabular-nums transition-all duration-300 ${hovered ? "text-[#2563EB] font-medium" : ""}`}>
                   {hovered ? (presentation.downloads || 0) + 1 : (presentation.downloads || 0)}
                 </span>
@@ -215,21 +235,21 @@ export default function PresentationCard({ presentation, index = 0 }) {
         {/* Thumbnail — desktop only, right side, 16:9 with padding */}
         <div className="hidden sm:flex flex-shrink-0 items-center pr-4 py-4">
           <div className="rounded-lg overflow-hidden bg-slate-100 border border-slate-200" style={{ width: "340px", aspectRatio: "16/9" }}>
-            {presentation.thumbnail_url ? (
+            {showThumb ? (
               <img src={presentation.thumbnail_url} alt="" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <span className="text-xs text-slate-400 font-medium text-center px-2">No thumbnail</span>
+                <span className="text-xs text-slate-600 font-medium text-center px-2">{noThumbText}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Right arrow overlay on thumbnail */}
-        <div className={`hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-full bg-white/80 transition-all duration-300 ${hovered ? "opacity-100" : "opacity-0"}`}>
+        <div aria-hidden="true" className={`hidden sm:flex absolute right-2 top-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-full bg-white/80 transition-all duration-300 ${hovered ? "opacity-100" : "opacity-0"}`}>
           <ChevronRight className="w-4 h-4 text-[#2563EB]" />
         </div>
       </article>
-    </Link>
+    </div>
   );
 }

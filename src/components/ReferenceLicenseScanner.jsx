@@ -58,14 +58,14 @@ function getStatusLabel(status, clarity, lang) {
 }
 
 const STATUS_CONFIG = {
-  open:        { icon: CheckCircle, color: "text-green-600",  bg: "bg-green-50 border-green-200" },
-  conditional: { icon: ShieldAlert, color: "text-amber-600",  bg: "bg-amber-50 border-amber-200" },
-  restricted:  { icon: ShieldX,     color: "text-red-600",    bg: "bg-red-50 border-red-200" },
+  open:        { icon: CheckCircle, color: "text-green-700",  bg: "bg-green-50 border-green-200" },
+  conditional: { icon: ShieldAlert, color: "text-amber-700",  bg: "bg-amber-50 border-amber-200" },
+  restricted:  { icon: ShieldX,     color: "text-red-700",    bg: "bg-red-50 border-red-200" },
   ambiguous:   { icon: ShieldAlert, color: "text-slate-600",  bg: "bg-slate-100 border-slate-300" },
-  unclear:     { icon: ShieldAlert, color: "text-slate-500",  bg: "bg-slate-50 border-slate-200" },
-  unknown:     { icon: ShieldAlert, color: "text-slate-500",  bg: "bg-slate-50 border-slate-200" },
-  not_found:   { icon: AlertCircle, color: "text-slate-400",  bg: "bg-slate-50 border-slate-200" },
-  error:       { icon: AlertCircle, color: "text-slate-400",  bg: "bg-slate-50 border-slate-200" },
+  unclear:     { icon: ShieldAlert, color: "text-slate-600",  bg: "bg-slate-50 border-slate-200" },
+  unknown:     { icon: ShieldAlert, color: "text-slate-600",  bg: "bg-slate-50 border-slate-200" },
+  not_found:   { icon: AlertCircle, color: "text-slate-600",  bg: "bg-slate-50 border-slate-200" },
+  error:       { icon: AlertCircle, color: "text-slate-600",  bg: "bg-slate-50 border-slate-200" },
 };
 
 function ResultRow({ item, lang }) {
@@ -78,13 +78,13 @@ function ResultRow({ item, lang }) {
 
   return (
     <div className={`border rounded-lg overflow-hidden ${cfg.bg}`}>
-      <button type="button" onClick={() => setExpanded(e => !e)} className="w-full flex items-center gap-3 p-3 text-left">
-        <Icon className={`w-4 h-4 flex-shrink-0 ${cfg.color}`} />
+      <button type="button" onClick={() => setExpanded(e => !e)} aria-expanded={expanded} className="w-full flex items-center gap-3 p-3 text-left">
+        <Icon className={`w-4 h-4 flex-shrink-0 ${cfg.color}`} aria-hidden="true" />
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-slate-800 truncate">{item.title || item.citation || item.doi}</p>
           <p className={`text-xs font-medium ${cfg.color}`}>{getStatusLabel(displayStatus, item.clarity, lang)}</p>
         </div>
-        {expanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+        {expanded ? <ChevronUp className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />}
       </button>
       {expanded && (
         <div className="px-3 pb-3 space-y-1 border-t border-black/5 pt-2">
@@ -92,7 +92,7 @@ function ResultRow({ item, lang }) {
           {item.doi && (
             <p className="text-xs text-slate-600 flex items-center gap-1">
               <span className="font-medium">DOI:</span>
-              <a href={`https://doi.org/${item.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline inline-flex items-center gap-0.5">
+              <a href={`https://doi.org/${item.doi}`} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline inline-flex items-center gap-0.5">
                 {item.doi} <ExternalLink className="w-3 h-3" />
               </a>
             </p>
@@ -100,7 +100,7 @@ function ResultRow({ item, lang }) {
           {item.license && (
             <p className="text-xs text-slate-600 flex items-center gap-1">
               <span className="font-medium">Lizenz:</span>
-              <a href={item.license} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate inline-flex items-center gap-0.5">
+              <a href={item.license} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline truncate inline-flex items-center gap-0.5">
                 {item.license} <ExternalLink className="w-3 h-3 flex-shrink-0" />
               </a>
             </p>
@@ -231,9 +231,10 @@ export default function ReferenceLicenseScanner({ file, fileUrl, lang, onScanCom
           <button
             type="button"
             onClick={() => setShowInfo(!showInfo)}
+            aria-expanded={showInfo}
             className="inline-flex items-center gap-2 px-3 py-1.5 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer group"
           >
-            <span className="text-lg">ℹ️</span>
+            <span className="text-lg" aria-hidden="true">ℹ️</span>
             <span className="text-xs font-medium text-slate-700 group-hover:text-slate-900">
               {lang === "de" ? "Hinweis zu den Lizenzquellen" : "License sources info"}
             </span>
@@ -278,7 +279,7 @@ export default function ReferenceLicenseScanner({ file, fileUrl, lang, onScanCom
 
         {extractError && (
           <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <AlertCircle className="w-4 h-4 text-red-700 flex-shrink-0" />
             <p className="text-xs text-red-700">
               {lang === "de" ? `Fehler bei der Textextraktion: ${extractError}` : `Text extraction error: ${extractError}`}
             </p>

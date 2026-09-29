@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { api } from "@/api/client";
 import { Link } from "react-router-dom";
 import { useLang, disciplineLabelDE, paperTypeLabelDE } from "@/lib/LanguageContext";
-import { Upload as UploadIcon, FileText, Link2, Tag, BookOpen, Video, CheckCircle, AlertCircle, Loader2, Image, FileDown, Plus, Trash2 } from "lucide-react";
+import { Upload as UploadIcon, FileText, Link2, Tag, BookOpen, Video, CheckCircle, AlertCircle, Loader2, Image, FileDown, Plus, Trash2, Sparkles } from "lucide-react";
 import AuthorshipVerifier from "@/components/AuthorshipVerifier";
 import ReferenceLicenseScanner from "@/components/ReferenceLicenseScanner";
-import { getUploadMode, hasNDRestriction, getPaperLicenseMinIndex, LICENSE_VALUES } from "@/lib/licenseUtils";
+import { getUploadMode, hasNDRestriction, getPaperLicenseMinIndex, hidesThumbnail, LICENSE_VALUES } from "@/lib/licenseUtils";
 
 const DOI_REGEX = /^10\.\d{4,}\/.+/;
 const DOI_REGEX_CHECK = DOI_REGEX;
@@ -44,53 +44,68 @@ const LICENSES_DE = [
   { value: "All Rights Reserved", label: "Alle Rechte vorbehalten", desc: "Keine Weiternutzung ohne Genehmigung" },
 ];
 
-function Field({ label, error, children, hint }) {
+/** aria-describedby / aria-invalid for a control rendered inside <Field id=…>. */
+function describedBy(id, { hint, error } = {}) {
+  const ids = [hint && `${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
+  return { id, "aria-describedby": ids || undefined, "aria-invalid": error ? true : undefined };
+}
+
+function Field({ id, label, error, children, hint }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-[#0F172A]">{label}</label>
-      {hint && <p className="text-xs text-slate-500">{hint}</p>}
+      <label htmlFor={id} className="block text-sm font-medium text-[#0F172A]">{label}</label>
+      {hint && <p id={`${id}-hint`} className="text-xs text-slate-600">{hint}</p>}
       {children}
       {error && (
-        <p className="flex items-center gap-1 text-xs text-red-600 mt-1">
-          <AlertCircle className="w-3.5 h-3.5" />{error}
+        <p id={`${id}-error`} className="flex items-center gap-1 text-xs text-red-700 mt-1">
+          <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />{error}
         </p>
       )}
     </div>
   );
 }
 
-function FileDropZone({ file, onFile, accept, label, hint, icon: Icon, error }) {
+function FileDropZone({ id, file, onFile, accept, label, hint, icon: Icon, error }) {
+  const { lang } = useLang();
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-[#0F172A]">{label}</label>
-      {hint && <p className="text-xs text-slate-500">{hint}</p>}
-      <div className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all ${
+      <label htmlFor={id} className="block text-sm font-medium text-[#0F172A]">{label}</label>
+      {hint && <p id={`${id}-hint`} className="text-xs text-slate-600">{hint}</p>}
+      <div className={`file-dropzone relative border-2 border-dashed rounded-xl p-6 text-center transition-all ${
         file ? "border-green-300 bg-green-50"
         : error ? "border-red-300 bg-red-50"
         : "border-slate-200 hover:border-[#2563EB] hover:bg-blue-50"
       }`}>
         <input
+          {...describedBy(id, { hint, error })}
           type="file"
           accept={accept}
           onChange={(e) => onFile(e.target.files[0] || null)}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
+        {/* Announces the chosen file to screen readers (WCAG 4.1.3). */}
+        <div aria-live="polite">
         {file ? (
           <div className="flex flex-col items-center gap-1.5">
-            <CheckCircle className="w-7 h-7 text-green-600" />
-            <p className="text-sm font-medium text-green-700">{file.name}</p>
-            <p className="text-xs text-green-600">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+            <CheckCircle className="w-7 h-7 text-green-700" aria-hidden="true" />
+            <p className="text-sm font-medium text-green-800">
+              <span className="sr-only">{lang === "de" ? "Ausgewählte Datei: " : "Selected file: "}</span>{file.name}
+            </p>
+            <p className="text-xs text-green-800">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-1.5">
-            <Icon className="w-7 h-7 text-slate-400" />
-            <p className="text-sm text-slate-500">{accept}</p>
+          <div className="flex flex-col items-center gap-1.5" aria-hidden="true">
+            <Icon className="w-7 h-7 text-slate-500" />
+            <p className="text-sm text-slate-600">
+              {lang === "de" ? "Datei hierher ziehen oder klicken" : "Drag a file here or click"} ({accept})
+            </p>
           </div>
         )}
+        </div>
       </div>
       {error && (
-        <p className="flex items-center gap-1 text-xs text-red-600">
-          <AlertCircle className="w-3.5 h-3.5" />{error}
+        <p id={`${id}-error`} className="flex items-center gap-1 text-xs text-red-700">
+          <AlertCircle className="w-3.5 h-3.5" aria-hidden="true" />{error}
         </p>
       )}
     </div>
@@ -118,6 +133,7 @@ export default function Upload() {
   const [handout, setHandout] = useState(null);
   const [handoutIsDerived, setHandoutIsDerived] = useState(false);
   const [thumbnail, setThumbnail] = useState(null);
+  const [aiGenerated, setAiGenerated] = useState(false);
 
   const extractPdfThumbnail = async (pdfFile) => {
     try {
@@ -308,6 +324,11 @@ export default function Upload() {
     if (!form.discipline) e.discipline = t.disciplineRequired;
     if (!form.license) e.license = t.licenseRequired;
     if (!isMetadataOnly && !file) e.file = t.fileRequired;
+    else if (!isMetadataOnly && file && !/\.(pdf|pptx)$/i.test(file.name)) {
+      e.file = lang === "de"
+        ? "Dieser Dateityp wird nicht unterstützt. Bitte lade eine PPTX- oder PDF-Datei hoch."
+        : "This file type is not supported. Please upload a PPTX or PDF file.";
+    }
     extraPapers.forEach((p, i) => {
       if (!p.doi.trim()) e[`extra_doi_${i}`] = t.doiRequired;
       else if (!DOI_REGEX.test(p.doi.trim())) e[`extra_doi_${i}`] = t.doiInvalid;
@@ -320,7 +341,11 @@ export default function Upload() {
     e.preventDefault();
     const errs = validate();
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    if (Object.keys(errs).length > 0) {
+      // Move focus to the first invalid field so the error is announced (WCAG 3.3.1).
+      requestAnimationFrame(() => document.querySelector('form [aria-invalid="true"]')?.focus());
+      return;
+    }
 
     setSubmitting(true);
 
@@ -344,7 +369,7 @@ export default function Upload() {
     }
 
     let thumbnail_url;
-    if (thumbnail) {
+    if (thumbnail && !hidesThumbnail(form.license)) {
       setUploadStatus("Uploading thumbnail…");
       const res = await api.integrations.Core.UploadFile({ file: thumbnail });
       thumbnail_url = res.file_url;
@@ -370,6 +395,7 @@ export default function Upload() {
       uploader_id: user ? user.id : null,
       uploader_name: user ? (user.full_name || user.email) : "Anonymous",
       uploader_university: form.institution.trim() || (user ? (user.university || "") : ""),
+      ai_generated_content: aiGenerated,
       is_author: isAuthor && authorshipVerified,
       authorship_verified: isAuthor && authorshipVerified,
       authorship_method: authorshipMethod || "unverified",
@@ -389,8 +415,9 @@ export default function Upload() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
+    <div className="flex items-center justify-center min-h-screen" role="status">
+      <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" aria-hidden="true" />
+      <span className="sr-only">{lang === "de" ? "Wird geladen…" : "Loading…"}</span>
     </div>
   );
 
@@ -400,7 +427,7 @@ export default function Upload() {
     <div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         <div className="w-20 h-20 rounded-full bg-green-50 border-2 border-green-200 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="w-10 h-10 text-green-600" />
+          <CheckCircle className="w-10 h-10 text-green-700" />
         </div>
         <h2 className="font-heading text-2xl font-semibold text-[#0F172A] mb-2">{t.published}</h2>
         <p className="text-slate-500 mb-2">{t.publishedDesc}</p>
@@ -421,14 +448,27 @@ export default function Upload() {
     <div className="min-h-screen bg-[#FDFDFD]">
       <div className="bg-[#1E293B] text-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <p className="text-blue-400 text-xs font-medium tracking-widest uppercase mb-3">{t.submissionPortal}</p>
+          <p className="text-blue-300 text-xs font-medium tracking-widest uppercase mb-3">{t.submissionPortal}</p>
           <h1 className="font-heading text-2xl lg:text-3xl font-semibold mb-2">{t.uploadHeading}</h1>
-          <p className="text-slate-400 text-sm">{t.uploadDesc}</p>
+          <p className="text-slate-300 text-sm">{t.uploadDesc}</p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} noValidate className="space-y-8">
+          <p className="text-sm text-slate-700">
+            {lang === "de" ? "Mit * markierte Felder sind Pflichtfelder." : "Fields marked with * are required."}
+          </p>
+          <div role="alert" aria-live="assertive">
+            {Object.keys(errors).length > 0 && (
+              <p className="flex items-start gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                {lang === "de"
+                  ? `Bitte korrigiere ${Object.keys(errors).length === 1 ? "einen Fehler" : `${Object.keys(errors).length} Fehler`} im Formular.`
+                  : `Please fix ${Object.keys(errors).length === 1 ? "one error" : `${Object.keys(errors).length} errors`} in the form.`}
+              </p>
+            )}
+          </div>
 
           {/* DOI & Paper — first */}
           <section className="bg-white border border-slate-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-6">
@@ -436,13 +476,16 @@ export default function Upload() {
               <Link2 className="w-5 h-5 text-[#2563EB]" />
               <h2 className="font-heading text-lg font-semibold text-[#0F172A]">{t.doiSection}</h2>
             </div>
-            <Field label={t.doiLabel} error={errors.doi} hint={t.doiHint}>
+            <Field id="upload-doi" label={t.doiLabel} error={errors.doi} hint={t.doiHint}>
               <div className="relative">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                {doiValid === true && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-600" />}
-                {doiValid === false && <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-500" />}
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                {doiValid === true && <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-700" />}
+                {doiValid === false && <AlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-700" />}
                 <input
+                  {...describedBy("upload-doi", { hint: t.doiHint, error: errors.doi })}
                   type="text"
+                  required
+                  aria-required="true"
                   value={form.doi}
                   onChange={handleDoiChange}
                   placeholder="10.1073/pnas.2000922117"
@@ -456,7 +499,7 @@ export default function Upload() {
                     → https://doi.org/{form.doi}
                   </a>
                   {fetchingPaperLicense && (
-                    <p className="text-xs text-slate-400 flex items-center gap-1">
+                    <p className="text-xs text-slate-500 flex items-center gap-1">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       {lang === "de" ? "Paper-Lizenz wird abgerufen…" : "Fetching paper license…"}
                     </p>
@@ -476,8 +519,9 @@ export default function Upload() {
                 </div>
               )}
             </Field>
-            <Field label={t.paperTitleLabel} hint={t.paperTitleHint}>
+            <Field id="upload-paper-title" label={t.paperTitleLabel} hint={t.paperTitleHint}>
               <input
+                {...describedBy("upload-paper-title", { hint: t.paperTitleHint })}
                 type="text"
                 value={form.paper_title}
                 onChange={handleChange("paper_title")}
@@ -489,40 +533,51 @@ export default function Upload() {
             {/* Additional Papers */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="block text-sm font-medium text-[#0F172A]">{t.additionalPapers || "Additional Papers"} <span className="text-slate-400 font-normal text-xs">({t.optional || "optional"})</span></label>
-                <button type="button" onClick={addExtraPaper} className="inline-flex items-center gap-1 text-xs text-[#2563EB] hover:underline font-medium">
-                  <Plus className="w-3.5 h-3.5" /> {t.addPaper || "Add paper"}
+                <h3 className="block text-sm font-medium text-[#0F172A]">{t.additionalPapers || "Additional Papers"} <span className="text-slate-600 font-normal text-xs">({t.optional || "optional"})</span></h3>
+                <button type="button" onClick={addExtraPaper} className="inline-flex items-center gap-1 min-h-[24px] text-xs text-[#1D4ED8] hover:underline font-medium">
+                  <Plus className="w-3.5 h-3.5" aria-hidden="true" /> {t.addPaper || "Add paper"}
                 </button>
               </div>
               {extraPapers.map((ep, i) => (
-                <div key={i} className="border border-slate-200 rounded-lg p-4 space-y-3 bg-slate-50">
+                <fieldset key={i} className="border border-slate-200 rounded-lg p-4 space-y-3 bg-slate-50">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-slate-500">Paper {i + 2}</span>
-                    <button type="button" onClick={() => removeExtraPaper(i)} className="text-slate-400 hover:text-red-500 transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" />
+                    <legend className="text-xs font-medium text-slate-700">Paper {i + 2}</legend>
+                    <button
+                      type="button"
+                      onClick={() => removeExtraPaper(i)}
+                      aria-label={lang === "de" ? `Paper ${i + 2} entfernen` : `Remove paper ${i + 2}`}
+                      className="p-1.5 -m-1.5 text-slate-600 hover:text-red-700 transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" aria-hidden="true" />
                     </button>
                   </div>
                   <div>
                     <input
+                      aria-label={`DOI – Paper ${i + 2}`}
+                      aria-invalid={errors[`extra_doi_${i}`] ? true : undefined}
+                      aria-describedby={errors[`extra_doi_${i}`] ? `extra-doi-error-${i}` : undefined}
                       type="text"
                       value={ep.doi}
                       onChange={(e) => updateExtraPaper(i, "doi", e.target.value)}
                       placeholder="DOI: 10.XXXX/…"
                       className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white font-mono ${errors[`extra_doi_${i}`] ? "border-red-300" : "border-slate-200"}`}
                     />
-                    {errors[`extra_doi_${i}`] && <p className="text-xs text-red-600 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors[`extra_doi_${i}`]}</p>}
+                    {errors[`extra_doi_${i}`] && <p id={`extra-doi-error-${i}`} className="text-xs text-red-700 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" aria-hidden="true" />{errors[`extra_doi_${i}`]}</p>}
                   </div>
                   <div>
                     <input
+                      aria-label={`${lang === "de" ? "Titel" : "Title"} – Paper ${i + 2}`}
+                      aria-invalid={errors[`extra_title_${i}`] ? true : undefined}
+                      aria-describedby={errors[`extra_title_${i}`] ? `extra-title-error-${i}` : undefined}
                       type="text"
                       value={ep.title}
                       onChange={(e) => updateExtraPaper(i, "title", e.target.value)}
                       placeholder={t.paperTitleLabel?.replace(" *", "") || "Paper title…"}
                       className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white ${errors[`extra_title_${i}`] ? "border-red-300" : "border-slate-200"}`}
                     />
-                    {errors[`extra_title_${i}`] && <p className="text-xs text-red-600 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errors[`extra_title_${i}`]}</p>}
+                    {errors[`extra_title_${i}`] && <p id={`extra-title-error-${i}`} className="text-xs text-red-700 mt-1 flex items-center gap-1"><AlertCircle className="w-3 h-3" aria-hidden="true" />{errors[`extra_title_${i}`]}</p>}
                   </div>
-                </div>
+                </fieldset>
               ))}
             </div>
           </section>
@@ -534,8 +589,11 @@ export default function Upload() {
               <h2 className="font-heading text-lg font-semibold text-[#0F172A]">{t.presentationSection}</h2>
             </div>
 
-            <Field label={t.titleLabel} error={errors.title}>
+            <Field id="upload-title" label={t.titleLabel} error={errors.title}>
               <input
+                {...describedBy("upload-title", { error: errors.title })}
+                required
+                aria-required="true"
                 type="text"
                 value={form.title}
                 onChange={handleChange("title")}
@@ -545,8 +603,11 @@ export default function Upload() {
             </Field>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <Field label={t.disciplineLabel} error={errors.discipline}>
+              <Field id="upload-discipline" label={t.disciplineLabel} error={errors.discipline}>
                 <select
+                  {...describedBy("upload-discipline", { error: errors.discipline })}
+                  required
+                  aria-required="true"
                   value={form.discipline}
                   onChange={handleChange("discipline")}
                   className={`w-full px-4 py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white appearance-none ${errors.discipline ? "border-red-300" : "border-slate-200"}`}
@@ -556,8 +617,9 @@ export default function Upload() {
                 </select>
               </Field>
 
-              <Field label={<>{t.paperTypeLabel || "Paper Type"} <span className="text-slate-400 font-normal text-xs">({t.paperTypeHint || "Optional"})</span></>}>
+              <Field id="upload-paper-type" label={<>{t.paperTypeLabel || "Paper Type"} <span className="text-slate-600 font-normal text-xs">({t.paperTypeHint || "Optional"})</span></>}>
                 <select
+                  id="upload-paper-type"
                   value={form.paper_type}
                   onChange={handleChange("paper_type")}
                   className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white appearance-none"
@@ -568,8 +630,11 @@ export default function Upload() {
               </Field>
             </div>
 
-            <Field label={lang === "de" ? "Lizenz der Präsentation *" : "Presentation License *"} error={errors.license} hint={t.licenseHint}>
+            <Field label={lang === "de" ? "Lizenz der Präsentation *" : "Presentation License *"} error={errors.license} hint={t.licenseHint} id="upload-license">
               <select
+                {...describedBy("upload-license", { hint: t.licenseHint, error: errors.license })}
+                required
+                aria-required="true"
                 value={form.license}
                 onChange={handleChange("license")}
                 className={`w-full px-4 py-3 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white appearance-none ${errors.license ? "border-red-300" : "border-slate-200"}`}
@@ -611,17 +676,17 @@ export default function Upload() {
                           setAuthorshipMatchedName(null);
                         }
                       }}
-                      className="w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB]"
+                      className="w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB]"
                     />
                   </div>
                   <div>
                     <span className="text-sm font-medium text-[#0F172A]">
-                      {lang === "de" ? "Ich bin der Autor / Co-Autor des der Präsentation zugehörigen Fachartikels" : "I am the author / co-author of the scientific paper associated with this presentation"}
+                      {lang === "de" ? "Ich bin alleiniger Autor des der Präsentation zugehörigen Fachartikels" : "I am the sole author of the scientific paper associated with this presentation"}
                     </span>
                     <p className="text-xs text-slate-500 mt-0.5">
                       {lang === "de"
-                        ? "Als Urheber gelten keine Lizenz-Beschränkungen. Authorship wird via CrossRef verifiziert."
-                        : "As the original author, no license restrictions apply. Authorship will be verified via CrossRef."}
+                        ? "Nur als alleiniger Urheber gelten keine Lizenz-Beschränkungen. Die Autorenschaft wird via CrossRef verifiziert – Paper mit mehreren Autoren werden abgelehnt."
+                        : "Only as the sole author do no license restrictions apply. Authorship is verified via CrossRef – papers with several authors are rejected."}
                     </p>
                   </div>
                 </label>
@@ -630,6 +695,7 @@ export default function Upload() {
                 {isAuthor && DOI_REGEX.test(form.doi.trim()) && (
                   <AuthorshipVerifier
                     doi={form.doi}
+                    requireSoleAuthor
                     userEmail={user.email}
                     userName={user.full_name || user.email}
                     userId={user.id}
@@ -655,7 +721,7 @@ export default function Upload() {
                 {/* Blocked: author claimed but not verified */}
                 {authorClaimBlocked && (
                   <div className="mt-3 flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
                     <p className="text-xs text-amber-800">
                       {lang === "de"
                         ? "Du musst deine Authorship via CrossRef bestätigen, bevor du als Autor hochladen kannst."
@@ -667,7 +733,7 @@ export default function Upload() {
             ) : (
               <div className="pt-2 border-t border-slate-100">
                 <div className="flex items-start gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <AlertCircle className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4 h-4 text-slate-500 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-slate-600">
                     {lang === "de"
                       ? "Bitte registriere dich, um Fachartikel-Autorenschaft-Ansprüche zu machen. Anonyme Uploads werden nicht als Autoren-verifiziert gespeichert."
@@ -680,7 +746,7 @@ export default function Upload() {
             {/* ND block warning */}
             {isNDBlocked && !isAuthor && (
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-700 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-red-800">
                     {lang === "de" ? "Upload nicht erlaubt — ND-Lizenz" : "Upload blocked — ND License"}
@@ -697,7 +763,7 @@ export default function Upload() {
             {/* Unknown license block */}
             {isUnknownBlocked && !isAuthor && (
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-700 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-red-800">
                     {lang === "de" ? "Lizenz unbekannt — Upload blockiert" : "Unknown license — upload blocked"}
@@ -714,7 +780,7 @@ export default function Upload() {
             {/* NC license info */}
             {!isAuthor && ["CC BY-NC 4.0", "CC BY-NC-SA 4.0"].includes(form.license) && (
               <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-800">
                   {lang === "de"
                     ? "NC-Lizenz: Diese Präsentation darf nur kostenlos angeboten werden. Kommerzielle Nutzung ist nicht erlaubt."
@@ -726,12 +792,14 @@ export default function Upload() {
             {/* Institution */}
             <div className="pt-2 border-t border-slate-100">
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-[#0F172A]">
+                <label htmlFor="upload-institution" className="block text-sm font-medium text-[#0F172A]">
                   {lang === "de" ? "Institution / Organisation" : "Institution / Organisation"}
-                  <span className="text-slate-400 font-normal text-xs ml-1">({lang === "de" ? "optional" : "optional"})</span>
+                  <span className="text-slate-500 font-normal text-xs ml-1">({lang === "de" ? "optional" : "optional"})</span>
                 </label>
                 <input
+                  id="upload-institution"
                   type="text"
+                  autoComplete="organization"
                   value={form.institution || ""}
                   onChange={handleChange("institution")}
                   placeholder={lang === "de" ? "z.B. Universität Hamburg, Max-Planck-Institut…" : "e.g. Harvard University, CERN…"}
@@ -740,10 +808,11 @@ export default function Upload() {
               </div>
             </div>
 
-            <Field label={t.tagsLabel} hint={t.tagsHint}>
+            <Field id="upload-tags" label={t.tagsLabel} hint={t.tagsHint}>
               <div className="relative">
-                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input
+                  {...describedBy("upload-tags", { hint: t.tagsHint })}
                   type="text"
                   value={form.tags}
                   onChange={handleChange("tags")}
@@ -764,7 +833,7 @@ export default function Upload() {
             {/* Metadata-only warning */}
             {isMetadataOnly && (
               <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-semibold text-amber-800">
                     {lang === "de" ? "Nur Metadaten-Upload möglich" : "Metadata-only upload"}
@@ -793,6 +862,7 @@ export default function Upload() {
                  setScanAttempt(0);
                  handleFileChange(newFile);
                }}
+                id="upload-file"
                 accept=".pdf,.pptx"
                 label={t.fileLabel} error={errors.file}
                 icon={UploadIcon}
@@ -815,7 +885,7 @@ export default function Upload() {
                       type="checkbox"
                       checked={consentDoi}
                       onChange={(e) => setConsentDoi(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
+                      className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
                     />
                     <span className="text-sm text-slate-700">
                       {lang === "de"
@@ -829,7 +899,7 @@ export default function Upload() {
                       type="checkbox"
                       checked={consentFigures}
                       onChange={(e) => setConsentFigures(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
+                      className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
                     />
                     <span className="text-sm text-slate-700">
                       {lang === "de"
@@ -883,7 +953,7 @@ export default function Upload() {
             {!isMetadataOnly && scanned && problematicPapers.length > 0 && (
               <>
                 <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 text-red-700 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-semibold text-red-800 mb-2">
                       {lang === "de"
@@ -898,7 +968,7 @@ export default function Upload() {
                           {paper.title && (
                             <>
                               <br />
-                              <span className="text-red-600">{paper.title}</span>
+                              <span className="text-red-700">{paper.title}</span>
                             </>
                           )}
                         </li>
@@ -928,6 +998,7 @@ export default function Upload() {
                       // keep uploadedFileUrl null so user can retry
                     }
                   }}
+                  id="upload-file-edited"
                   accept=".pdf,.pptx"
                   label={lang === "de" ? "Bearbeitete Präsentationsdatei hochladen" : "Upload edited presentation file"}
                   hint={lang === "de" ? "Laden Sie die bearbeitete Datei erneut hoch" : "Upload the edited file again"}
@@ -948,7 +1019,7 @@ export default function Upload() {
                     type="checkbox"
                     checked={confirmedFiguresRemoved}
                     onChange={(e) => setConfirmedFiguresRemoved(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
+                    className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
                   />
                   <span className="text-xs text-slate-700">
                     {lang === "de"
@@ -973,7 +1044,7 @@ export default function Upload() {
                     type="checkbox"
                     checked={confirmedRestrictedCitations}
                     onChange={(e) => setConfirmedRestrictedCitations(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
+                    className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
                   />
                   <span className="text-sm text-slate-700">
                     {lang === "de"
@@ -989,30 +1060,42 @@ export default function Upload() {
 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {/* Thumbnail with preview */}
+              {/* Thumbnail with preview — not offered for licences that forbid a preview image */}
+              {hidesThumbnail(form.license) ? (
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-[#0F172A]">{t.thumbnailLabel}</label>
-                {t.thumbnailHint && <p className="text-xs text-slate-500">{t.thumbnailHint}</p>}
-                <div className={`relative border-2 border-dashed rounded-xl overflow-hidden text-center transition-all ${thumbnail ? "border-green-300 bg-green-50" : "border-slate-200 hover:border-[#2563EB] hover:bg-blue-50"}`}>
-                  <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => setThumbnail(e.target.files[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                <p className="block text-sm font-medium text-[#0F172A]">{t.thumbnailLabel}</p>
+                <p className="text-xs text-slate-600 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  {lang === "de"
+                    ? `Unter der Lizenz ${form.license} wird kein Vorschaubild angezeigt oder gespeichert.`
+                    : `No preview image is shown or stored under the ${form.license} license.`}
+                </p>
+              </div>
+              ) : (
+              <div className="space-y-1.5">
+                <label htmlFor="upload-thumbnail" className="block text-sm font-medium text-[#0F172A]">{t.thumbnailLabel}</label>
+                {t.thumbnailHint && <p id="upload-thumbnail-hint" className="text-xs text-slate-600">{t.thumbnailHint}</p>}
+                <div className={`file-dropzone relative border-2 border-dashed rounded-xl overflow-hidden text-center transition-all ${thumbnail ? "border-green-300 bg-green-50" : "border-slate-200 hover:border-[#2563EB] hover:bg-blue-50"}`}>
+                  <input id="upload-thumbnail" aria-describedby={t.thumbnailHint ? "upload-thumbnail-hint" : undefined} type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => setThumbnail(e.target.files[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                   {thumbnail ? (
                     <div className="flex flex-col items-center gap-1.5">
-                      <img src={URL.createObjectURL(thumbnail)} alt="Thumbnail preview" className="w-full h-32 object-cover" />
+                      <img src={URL.createObjectURL(thumbnail)} alt={lang === "de" ? "Vorschau des Thumbnails" : "Thumbnail preview"} className="w-full h-32 object-cover" />
                       <div className="pb-2 flex items-center gap-1.5">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <CheckCircle className="w-4 h-4 text-green-700" />
                         <p className="text-xs font-medium text-green-700">{["thumbnail.png", "thumbnail.jpg"].includes(thumbnail.name) ? (lang === "de" ? "Auto-Vorschau (1. Folie)" : "Auto-preview (1st slide)") : thumbnail.name}</p>
                       </div>
                     </div>
                   ) : (
                     <div className="p-6 flex flex-col items-center gap-1.5">
-                      <Image className="w-7 h-7 text-slate-400" />
+                      <Image className="w-7 h-7 text-slate-500" />
                       <p className="text-sm text-slate-500">.jpg, .png, .webp</p>
                     </div>
                   )}
                 </div>
               </div>
+              )}
               <div className="space-y-2">
                 <FileDropZone
+                  id="upload-handout"
                   file={handout} onFile={setHandout}
                   accept=".pdf"
                   label={t.handoutLabel} hint={t.handoutHint}
@@ -1024,7 +1107,7 @@ export default function Upload() {
                       type="checkbox"
                       checked={handoutIsDerived}
                       onChange={(e) => setHandoutIsDerived(e.target.checked)}
-                      className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
+                      className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
                     />
                     <span className="text-xs text-slate-600">
                       {lang === "de"
@@ -1036,10 +1119,11 @@ export default function Upload() {
               </div>
             </div>
 
-            <Field label={t.videoLabel} hint={t.videoHint}>
+            <Field id="upload-video" label={t.videoLabel} hint={t.videoHint}>
               <div className="relative">
-                <Video className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Video className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                 <input
+                  {...describedBy("upload-video", { hint: t.videoHint })}
                   type="url"
                   value={form.video_url}
                   onChange={handleChange("video_url")}
@@ -1048,6 +1132,33 @@ export default function Upload() {
                 />
               </div>
             </Field>
+          </section>
+
+          {/* AI declaration */}
+          <section aria-labelledby="ai-declaration-heading" className="bg-white border border-slate-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-3">
+            <h2 id="ai-declaration-heading" className="font-heading text-lg font-semibold text-[#0F172A] flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#2563EB]" aria-hidden="true" />
+              {lang === "de" ? "Einsatz von KI" : "Use of AI"}
+            </h2>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={aiGenerated}
+                onChange={(e) => setAiGenerated(e.target.checked)}
+                aria-describedby="ai-declaration-hint"
+                className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
+              />
+              <span className="text-sm text-slate-800">
+                {lang === "de"
+                  ? "Ich bestätige, dass diese Präsentation KI-generierte Inhalte enthält (z. B. Texte, Bilder oder Grafiken, die mit KI erstellt wurden)."
+                  : "I confirm that this presentation contains AI-generated content (e.g. text, images or graphics created with AI)."}
+              </span>
+            </label>
+            <p id="ai-declaration-hint" className="text-xs text-slate-600 pl-8">
+              {lang === "de"
+                ? "Pflicht, sobald KI genutzt wurde. Die Präsentation wird dann öffentlich mit einem KI-Hinweis gekennzeichnet."
+                : "Required whenever AI was used. The presentation is then publicly marked with an AI notice."}
+            </p>
           </section>
 
           {/* Submit */}
@@ -1069,7 +1180,7 @@ export default function Upload() {
             }
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#2563EB] text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors min-h-[44px] text-sm">
               {submitting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />{uploadStatus}</>
+                <><Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /><span role="status">{uploadStatus || (lang === "de" ? "Wird verarbeitet…" : "Processing…")}</span></>
               ) : (
                 <><UploadIcon className="w-4 h-4" />{t.publish}</>
               )}

@@ -3,6 +3,7 @@
 // presentations are public.
 
 import JSZip from "jszip";
+import { getLicenseDetails } from "../../src/lib/licenseDetails.js";
 import { serviceRole } from "../lib/entities.js";
 import { readStoredFile } from "../lib/files.js";
 import { HttpError, badRequest, notFound, nowIso, readJson } from "../lib/util.js";
@@ -56,6 +57,22 @@ export default async function downloadPresentation(request, env, user) {
   const license = presentation.license || "Unknown";
   const licenseId = `PH-${presentation.id.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 
+  // The full terms travel with the file, in both site languages, so the licence
+  // stays attached to the download and not only to the preview page.
+  const termsBlock = (lang) => {
+    const d = getLicenseDetails(license, lang);
+    if (!d) return [];
+    const de = lang === "de";
+    return [
+      `${license} — ${d.title}`,
+      ...(d.allows.length ? [de ? `Erlaubt:` : `Permitted:`, ...d.allows.map((a) => `  + ${a}`)] : []),
+      ...(d.conditions.length ? [de ? `Bedingungen:` : `Conditions:`, ...d.conditions.map((c) => `  - ${c}`)] : []),
+      ...(d.note ? [d.note] : []),
+      d.url ? `${de ? "Vollständiger Lizenztext" : "Full legal code"}: ${d.url}` : "",
+      ``,
+    ];
+  };
+
   const licenseText = [
     `LICENSE`,
     `=======`,
@@ -75,6 +92,16 @@ export default async function downloadPresentation(request, env, user) {
     ``,
     license !== "All Rights Reserved" && license !== "CC0 1.0"
       ? `When using this work, please credit:\n"${uploaderStr}" (${uploadYear}) via PaperHub — ${license}`
+      : ``,
+    ``,
+    `LICENSE TERMS`,
+    `-------------`,
+    ...termsBlock("en"),
+    `LIZENZBEDINGUNGEN`,
+    `-----------------`,
+    ...termsBlock("de"),
+    presentation.ai_generated_content
+      ? `AI NOTICE: The uploader declared that this presentation contains AI-generated content.`
       : ``,
   ].join("\n");
 

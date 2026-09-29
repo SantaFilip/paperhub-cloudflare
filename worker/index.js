@@ -11,6 +11,7 @@ import { getUser, requireUser } from "./lib/auth.js";
 import { createRecord, deleteRecord, listRecords, updateRecord } from "./lib/entities.js";
 import { HttpError, badRequest, json, newId, notFound } from "./lib/util.js";
 import { handleAuth } from "./routes/auth.js";
+import { hidesThumbnail } from "../src/lib/licenseUtils.js";
 
 import downloadPresentation from "./functions/downloadPresentation.js";
 import extractFileText from "./functions/extractFileText.js";
@@ -59,7 +60,25 @@ async function handleUpload(request, env) {
   return json({ file_url: `${origin}/files/${key}` });
 }
 
+/**
+ * True if the key is the thumbnail of a presentation whose licence forbids a
+ * preview image. The API already hides such URLs; this also stops links that
+ * were shared or cached before the rule existed.
+ */
+async function isWithheldThumbnail(key, env) {
+  if (!/\.(png|jpe?g|webp|gif)$/i.test(key)) return false;
+  // Suffix match without LIKE: D1 rejects LIKE patterns longer than 50 bytes.
+  const suffix = `/files/${key}`;
+  const rows = await env.DB.prepare(
+    "SELECT license FROM presentations WHERE substr(thumbnail_url, -length(?1)) = ?1"
+  )
+    .bind(suffix)
+    .all();
+  return (rows.results || []).some((row) => hidesThumbnail(row.license));
+}
+
 async function serveFile(key, env, request) {
+  if (await isWithheldThumbnail(key, env)) throw notFound("File not found");
   const object = await env.FILES.get(key);
   if (!object) throw notFound("File not found");
 

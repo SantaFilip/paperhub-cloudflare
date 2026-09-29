@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const DISCIPLINES_EN = [
   "Machine Learning", "Computer Science", "Physics", "Chemistry",
@@ -74,7 +74,7 @@ const translations = {
     tagsLabel: "Tags",
     tagsHint: "Comma-separated keywords (e.g. Jurassic, carbon cycle, isotopes)",
     fileSection: "File Upload",
-    fileLabel: "Presentation File (PPT or PDF) *",
+    fileLabel: "Upload presentation (pptx, ppt) *",
     fileRequired: "Please upload a file (PPT or PDF)",
     fileDropHint: "Drop file here or",
     fileSelect: "choose",
@@ -203,7 +203,7 @@ const translations = {
     tagsLabel: "Tags",
     tagsHint: "Kommagetrennte Schlagwörter (z.B. Jurassic, carbon cycle, isotopes)",
     fileSection: "Datei-Upload",
-    fileLabel: "Präsentationsdatei (PPT oder PDF) *",
+    fileLabel: "Präsentation hochladen (pptx, ppt) *",
     fileRequired: "Bitte laden Sie eine Datei hoch (PPT oder PDF)",
     fileDropHint: "Datei hier ablegen oder",
     fileSelect: "auswählen",
@@ -293,6 +293,11 @@ const LanguageContext = createContext({ lang: "en", t: translations.en, setLang:
 
 export function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => localStorage.getItem("ph_lang") || "en");
+
+  // Screen readers pick pronunciation from <html lang> (WCAG 3.1.1).
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const handleSetLang = (l) => {
     setLang(l);

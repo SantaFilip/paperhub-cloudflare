@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { Link } from "react-router-dom";
 import { User, FileText, Mail, HelpCircle, ChevronDown, Shield, Scale, LogOut } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
@@ -26,34 +26,46 @@ const FAQ_EN = [
 
 function FaqItem({ q, a }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
   return (
     <div className="border-b border-slate-100 last:border-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-start justify-between gap-2 py-2.5 text-left"
-      >
-        <span className="text-xs font-medium text-slate-700">{q}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 mt-0.5 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && <p className="text-xs text-slate-500 pb-3 pr-4">{a}</p>}
+      <h3>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={id}
+          className="w-full flex items-start justify-between gap-2 py-2.5 text-left"
+        >
+          <span className="text-xs font-medium text-slate-800">{q}</span>
+          <ChevronDown aria-hidden="true" className={`w-3.5 h-3.5 text-slate-500 flex-shrink-0 mt-0.5 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </h3>
+      {open && <p id={id} className="text-xs text-slate-700 pb-3 pr-4">{a}</p>}
     </div>
   );
 }
 
 function LegalAccordion({ title, icon, children }) {
   const [open, setOpen] = useState(false);
+  const id = useId();
   return (
     <div className="border-b border-slate-100 last:border-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-2 py-2.5 text-left"
-      >
-        <span className="flex items-center gap-2 text-xs font-medium text-slate-700">
-          <span className="text-slate-400">{icon}</span>{title}
-        </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && <div className="pb-3 pr-2 text-xs text-slate-600">{children}</div>}
+      <h3>
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={id}
+          className="w-full flex items-center justify-between gap-2 py-2.5 text-left"
+        >
+          <span className="flex items-center gap-2 text-xs font-medium text-slate-800">
+            <span className="text-slate-500" aria-hidden="true">{icon}</span>{title}
+          </span>
+          <ChevronDown aria-hidden="true" className={`w-3.5 h-3.5 text-slate-500 flex-shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+      </h3>
+      {open && <div id={id} className="pb-3 pr-2 text-xs text-slate-700">{children}</div>}
     </div>
   );
 }
@@ -63,14 +75,44 @@ export default function AccountMenu({ user }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState("profile");
   const ref = useRef(null);
+  const toggleRef = useRef(null);
+  const tabRefs = useRef({});
+  const panelId = useId();
 
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     };
+    // Escape closes the panel and returns focus to its toggle button.
+    const onKey = (e) => {
+      if (e.key === "Escape" && ref.current?.contains(document.activeElement)) {
+        setOpen(false);
+        toggleRef.current?.focus();
+      }
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", onKey);
+    };
   }, []);
+
+  // Arrow keys move between tabs (WAI-ARIA tabs pattern).
+  const onTabKeyDown = (e) => {
+    const ids = tabs.map((tb) => tb.id);
+    const i = ids.indexOf(tab);
+    let next = null;
+    if (e.key === "ArrowRight") next = ids[(i + 1) % ids.length];
+    if (e.key === "ArrowLeft") next = ids[(i - 1 + ids.length) % ids.length];
+    if (e.key === "Home") next = ids[0];
+    if (e.key === "End") next = ids[ids.length - 1];
+    if (next) {
+      e.preventDefault();
+      setTab(next);
+      tabRefs.current[next]?.focus();
+    }
+  };
 
   const faq = lang === "de" ? FAQ_DE : FAQ_EN;
 
@@ -84,47 +126,65 @@ export default function AccountMenu({ user }) {
   return (
     <div className="relative ml-1" ref={ref}>
       <button
+        ref={toggleRef}
+        type="button"
         onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-controls={panelId}
         className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-[#0F172A] bg-slate-100 rounded-md hover:bg-slate-200 transition-colors"
       >
         {user ? (
           <>
-            <div className="w-6 h-6 rounded-full bg-[#1E293B] flex items-center justify-center">
+            <span className="sr-only">{lang === "de" ? "Konto und Informationen: " : "Account and information: "}</span>
+            <div className="w-6 h-6 rounded-full bg-[#1E293B] flex items-center justify-center" aria-hidden="true">
               <span className="text-white text-xs font-bold">
                 {(user.full_name || user.email || "U")[0].toUpperCase()}
               </span>
             </div>
-            <span className="hidden lg:block truncate max-w-[100px]">
+            <span className="sr-only lg:not-sr-only lg:block truncate max-w-[100px]">
               {user.full_name || t.profile}
             </span>
           </>
         ) : (
           <span>{lang === "de" ? "Übersicht" : "Menu"}</span>
         )}
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown aria-hidden="true" className={`w-3.5 h-3.5 text-slate-500 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+        <div id={panelId} className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
           {/* Tab bar */}
-          <div className="flex border-b border-slate-100">
+          <div role="tablist" aria-label={lang === "de" ? "Bereiche" : "Sections"} className="flex border-b border-slate-100" onKeyDown={onTabKeyDown}>
             {tabs.map((tb) => (
               <button
                 key={tb.id}
+                ref={(el) => { tabRefs.current[tb.id] = el; }}
+                type="button"
+                role="tab"
+                id={`${panelId}-tab-${tb.id}`}
+                aria-selected={tab === tb.id}
+                aria-controls={`${panelId}-panel`}
+                tabIndex={tab === tb.id ? 0 : -1}
                 onClick={() => setTab(tb.id)}
                 className={`flex-1 flex flex-col items-center gap-1 py-2.5 transition-colors ${
                   tab === tb.id
-                    ? "text-[#2563EB] border-b-2 border-[#2563EB] bg-blue-50"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                    ? "text-[#1D4ED8] border-b-2 border-[#2563EB] bg-blue-50"
+                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-50"
                 }`}
               >
-                {tb.icon}
-                <span className="text-[10px] font-medium">{tb.label}</span>
+                <span aria-hidden="true">{tb.icon}</span>
+                <span className="text-xs font-medium">{tb.label}</span>
               </button>
             ))}
           </div>
 
-          <div className="p-4 max-h-80 overflow-y-auto">
+          <div
+            role="tabpanel"
+            id={`${panelId}-panel`}
+            aria-labelledby={`${panelId}-tab-${tab}`}
+            tabIndex={0}
+            className="p-4 max-h-80 overflow-y-auto"
+          >
 
             {/* Profile tab */}
             {tab === "profile" && (
@@ -139,7 +199,7 @@ export default function AccountMenu({ user }) {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-[#0F172A] truncate">{user.full_name || "—"}</p>
-                        <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                        <p className="text-xs text-slate-600 truncate">{user.email}</p>
                       </div>
                     </div>
                     <Link
@@ -147,7 +207,7 @@ export default function AccountMenu({ user }) {
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                     >
-                      <User className="w-4 h-4 text-slate-400" />
+                      <User className="w-4 h-4 text-slate-500" aria-hidden="true" />
                       {lang === "de" ? "Mein Profil" : "My Profile"}
                     </Link>
                     <Link
@@ -155,15 +215,16 @@ export default function AccountMenu({ user }) {
                       onClick={() => setOpen(false)}
                       className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 rounded-lg transition-colors"
                     >
-                      <FileText className="w-4 h-4 text-slate-400" />
+                      <FileText className="w-4 h-4 text-slate-500" aria-hidden="true" />
                       {lang === "de" ? "Präsentation hochladen" : "Upload Presentation"}
                     </Link>
                     <button
+                      type="button"
                       onClick={() => {
                         setOpen(false);
                         api.auth.logout("/landing");
                       }}
-                      className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors text-left"
+                      className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-red-700 hover:bg-red-50 rounded-lg transition-colors text-left"
                     >
                       <LogOut className="w-4 h-4" />
                       {lang === "de" ? "Abmelden" : "Sign Out"}
@@ -171,7 +232,7 @@ export default function AccountMenu({ user }) {
                     </>
                     ) : (
                   <div className="space-y-2">
-                    <p className="text-sm text-slate-500 mb-3">
+                    <p className="text-sm text-slate-700 mb-3">
                       {lang === "de"
                         ? "Melde dich an, um Präsentationen hochzuladen und dein Profil zu verwalten."
                         : "Sign in to upload presentations and manage your profile."}
@@ -230,7 +291,7 @@ export default function AccountMenu({ user }) {
                     <p>{lang === "de" ? "Urheberrechts-Beschwerde: E-Mail an info@filipsudermann.com" : "Copyright complaint: email info@filipsudermann.com"}</p>
                   </div>
                 </LegalAccordion>
-                <p className="text-[10px] text-slate-400 mt-3">Stand: 27.06.2026</p>
+                <p className="text-xs text-slate-600 mt-3">Stand: 27.06.2026</p>
               </div>
             )}
 

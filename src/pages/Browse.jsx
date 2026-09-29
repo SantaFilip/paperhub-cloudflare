@@ -71,13 +71,13 @@ export default function Browse() {
       <div className="bg-[#1E293B] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
           <div className="max-w-2xl">
-            <p className="text-blue-400 text-sm font-medium tracking-widest uppercase mb-3">
+            <p className="text-blue-300 text-sm font-medium tracking-widest uppercase mb-3">
               {t.browseSubtitle}
             </p>
             <h1 className="font-heading text-3xl lg:text-4xl font-semibold leading-tight mb-4">
               {t.browseHeading}
             </h1>
-            <p className="text-slate-400 text-base leading-relaxed">
+            <p className="text-slate-300 text-base leading-relaxed">
               {t.browseDesc}
             </p>
           </div>
@@ -89,9 +89,10 @@ export default function Browse() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Mobile: search bar on top row */}
           <div className="relative py-2 sm:hidden">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
             <input
-              type="text"
+              type="search"
+              aria-label={lang === "de" ? "Präsentationen durchsuchen" : "Search presentations"}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t.searchPlaceholder}
@@ -103,10 +104,11 @@ export default function Browse() {
           <div className="flex items-end gap-2 py-2">
             {/* Search — desktop only */}
             <div className="relative flex-[2] hidden sm:block">
-              <label className="block text-xs font-medium text-slate-400 mb-1">{lang === "de" ? "Suche" : "Search"}</label>
-              <Search className="absolute left-3 bottom-2.5 w-4 h-4 text-slate-400" />
+              <label htmlFor="browse-search" className="block text-xs font-medium text-slate-700 mb-1">{lang === "de" ? "Suche" : "Search"}</label>
+              <Search className="absolute left-3 bottom-2.5 w-4 h-4 text-slate-500" aria-hidden="true" />
               <input
-                type="text"
+                id="browse-search"
+                type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t.searchPlaceholder}
@@ -116,8 +118,9 @@ export default function Browse() {
 
             {/* Discipline Filter */}
             <div className="relative flex-1 min-w-0">
-              <label className="block text-xs font-medium text-slate-400 mb-1 truncate">{lang === "de" ? "Fachgebiet" : "Discipline"}</label>
+              <label htmlFor="browse-discipline" className="block text-xs font-medium text-slate-700 mb-1 truncate">{lang === "de" ? "Fachgebiet" : "Discipline"}</label>
               <select
+                id="browse-discipline"
                 value={selectedDiscipline}
                 onChange={(e) => setSelectedDiscipline(e.target.value)}
                 className="w-full appearance-none pl-2 pr-6 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-[#0F172A] cursor-pointer truncate"
@@ -127,13 +130,14 @@ export default function Browse() {
                   <option key={d} value={d}>{lang === "de" ? disciplineLabelDE[d] : d}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-1 bottom-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-1 bottom-2.5 w-3.5 h-3.5 text-slate-500 pointer-events-none" aria-hidden="true" />
             </div>
 
             {/* Paper Type Filter */}
             <div className="relative flex-1 min-w-0">
-              <label className="block text-xs font-medium text-slate-400 mb-1 truncate">{lang === "de" ? "Papertyp" : "Type"}</label>
+              <label htmlFor="browse-type" className="block text-xs font-medium text-slate-700 mb-1 truncate">{lang === "de" ? "Papertyp" : "Type"}</label>
               <select
+                id="browse-type"
                 value={selectedPaperType}
                 onChange={(e) => setSelectedPaperType(e.target.value)}
                 className="w-full appearance-none pl-2 pr-6 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-[#0F172A] cursor-pointer"
@@ -143,13 +147,14 @@ export default function Browse() {
                   <option key={pt} value={pt}>{lang === "de" ? paperTypeLabelDE[pt] : pt}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-1 bottom-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-1 bottom-2.5 w-3.5 h-3.5 text-slate-500 pointer-events-none" aria-hidden="true" />
             </div>
 
             {/* Sort */}
             <div className="relative flex-1 min-w-0">
-              <label className="block text-xs font-medium text-slate-400 mb-1 truncate">{lang === "de" ? "Sortierung" : "Sort"}</label>
+              <label htmlFor="browse-sort" className="block text-xs font-medium text-slate-700 mb-1 truncate">{lang === "de" ? "Sortierung" : "Sort"}</label>
               <select
+                id="browse-sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full appearance-none pl-2 pr-6 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] text-[#0F172A] cursor-pointer"
@@ -158,12 +163,12 @@ export default function Browse() {
                   <option key={o.value} value={o.value}>{o.label}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-1 bottom-2.5 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-1 bottom-2.5 w-3.5 h-3.5 text-slate-500 pointer-events-none" aria-hidden="true" />
             </div>
 
             {/* Count — slide icon + number */}
             <div className="flex flex-col items-center justify-end pb-1 flex-shrink-0 gap-1">
-              <svg width="30" height="24" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="hidden sm:block">
+              <svg aria-hidden="true" width="30" height="24" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="hidden sm:block">
                 <rect x="0.5" y="0.5" width="19" height="13" rx="1.5" stroke="#64748b" strokeWidth="1" fill="white"/>
                 <rect x="3" y="3" width="8" height="1.5" rx="0.75" fill="#64748b"/>
                 <rect x="3" y="6" width="12" height="1.5" rx="0.75" fill="#64748b"/>
@@ -171,7 +176,7 @@ export default function Browse() {
                 <line x1="10" y1="14" x2="10" y2="16" stroke="#64748b" strokeWidth="1"/>
                 <line x1="7" y1="15.5" x2="13" y2="15.5" stroke="#64748b" strokeWidth="1"/>
               </svg>
-              <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="sm:hidden">
+              <svg aria-hidden="true" width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="sm:hidden">
                 <rect x="0.5" y="0.5" width="19" height="13" rx="1.5" stroke="#64748b" strokeWidth="1" fill="white"/>
                 <rect x="3" y="3" width="8" height="1.5" rx="0.75" fill="#64748b"/>
                 <rect x="3" y="6" width="12" height="1.5" rx="0.75" fill="#64748b"/>
@@ -179,7 +184,11 @@ export default function Browse() {
                 <line x1="10" y1="14" x2="10" y2="16" stroke="#64748b" strokeWidth="1"/>
                 <line x1="7" y1="15.5" x2="13" y2="15.5" stroke="#64748b" strokeWidth="1"/>
               </svg>
-              <span className="text-base font-bold text-slate-700 tabular-nums">{filtered.length}</span>
+              {/* Result count is announced when filters change (WCAG 4.1.3). */}
+              <span className="text-base font-bold text-slate-700 tabular-nums" role="status">
+                {filtered.length}
+                <span className="sr-only">{lang === "de" ? " Präsentationen gefunden" : " presentations found"}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -189,24 +198,24 @@ export default function Browse() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loading ? (
           <div className="flex items-center justify-center py-24">
-            <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" aria-hidden="true" /><span role="status" className="sr-only">{lang === "de" ? "Wird geladen…" : "Loading…"}</span>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-              <BookOpen className="w-8 h-8 text-slate-400" />
+              <BookOpen className="w-8 h-8 text-slate-500" />
             </div>
-            <h3 className="font-heading text-xl text-[#0F172A] mb-2">{t.noneFound}</h3>
-            <p className="text-slate-500 max-w-sm">
+            <h2 className="font-heading text-xl text-[#0F172A] mb-2">{t.noneFound}</h2>
+            <p className="text-slate-600 max-w-sm">
               {presentations.length === 0 ? t.noneYet : t.noResults}
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <ul className="space-y-3" aria-label={lang === "de" ? "Präsentationen" : "Presentations"}>
             {filtered.map((p, i) => (
-              <PresentationCard key={p.id} presentation={p} index={i} />
+              <li key={p.id}><PresentationCard presentation={p} index={i} /></li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
     </div>
