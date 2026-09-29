@@ -68,7 +68,7 @@ export default function Datenschutz() {
       ]} />
 
       <H2>{de ? "Sicherheit" : "Security"}</H2>
-      <P>{de ? "TLS-Verschlüsselung, Passwort-Hashing (bcrypt)." : "TLS encryption, password hashing (bcrypt)."}</P>
+      <P>{de ? "TLS-Verschlüsselung, Passwort-Hashing (PBKDF2 mit SHA-256 und individuellem Salt)." : "TLS encryption, password hashing (PBKDF2 with SHA-256 and a per-user salt)."}</P>
 
       <H2>{de ? "Kontakt" : "Contact"}</H2>
       <P>{de ? "DSGVO-Anfragen an info@filipsudermann.com, Betreff: DSGVO" : "Send GDPR requests to info@filipsudermann.com with subject: GDPR"}</P>

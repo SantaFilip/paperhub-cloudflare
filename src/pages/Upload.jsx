@@ -863,7 +863,7 @@ export default function Upload() {
                  handleFileChange(newFile);
                }}
                 id="upload-file"
-                accept=".pdf,.pptx"
+                accept=".pptx,.pdf"
                 label={t.fileLabel} error={errors.file}
                 icon={UploadIcon}
               />
@@ -999,7 +999,7 @@ export default function Upload() {
                     }
                   }}
                   id="upload-file-edited"
-                  accept=".pdf,.pptx"
+                  accept=".pptx,.pdf"
                   label={lang === "de" ? "Bearbeitete Präsentationsdatei hochladen" : "Upload edited presentation file"}
                   hint={lang === "de" ? "Laden Sie die bearbeitete Datei erneut hoch" : "Upload the edited file again"}
                   error={errors.file}

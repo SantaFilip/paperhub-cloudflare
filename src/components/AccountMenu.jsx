@@ -9,7 +9,7 @@ const FAQ_DE = [
   { q: "Wer entwickelt PaperHub?", a: "Filip entwickelt PaperHub als Einzelperson — als Start-up Initiative." },
   { q: "Kann ich meine Präsentation löschen?", a: "Ja. Gehe zu deinem Dashboard und wähle Löschen. Nach 30 Tagen wird sie endgültig entfernt." },
   { q: "Wie funktioniert die Lizenzprüfung?", a: "PaperHub extrahiert Zitate aus deinen Präsentationen und prüft die Lizenzen der zugehörigen Artikel über eine öffentliche Datenbank." },
-  { q: "Ist mein Passwort sicher?", a: "Ja, es wird mit bcrypt-Hashing verschlüsselt." },
+  { q: "Ist mein Passwort sicher?", a: "Ja. Passwörter werden nie im Klartext gespeichert, sondern mit PBKDF2 (SHA-256, individueller Salt) gehasht." },
   { q: "Werden meine Daten an Dritte weitergegeben?", a: "Nein. Kein Tracking, keine Weitergabe an Dritte. DSGVO-konform." },
   { q: "Wie melde ich einen Fehler?", a: "Sende eine E-Mail an info@filipsudermann.com mit einer Fehlerbeschreibung." },
 ];
@@ -19,7 +19,7 @@ const FAQ_EN = [
   { q: "Who develops PaperHub?", a: "Filip develops PaperHub as a solo developer — as a start-up initiative." },
   { q: "Can I delete my presentation?", a: "Yes. Go to your dashboard and select Delete. After 30 days it is permanently removed." },
   { q: "How does the license check work?", a: "PaperHub extracts citations from your presentations and checks the licenses of those papers via a public database." },
-  { q: "Is my password secure?", a: "Yes, it is encrypted using bcrypt hashing." },
+  { q: "Is my password secure?", a: "Yes. Passwords are never stored in plain text; they are hashed with PBKDF2 (SHA-256, per-user salt)." },
   { q: "Is my data shared with third parties?", a: "No. No tracking, no third-party sharing. GDPR-compliant." },
   { q: "How do I report a bug?", a: "Send an email to info@filipsudermann.com describing the issue." },
 ];
@@ -274,7 +274,7 @@ export default function AccountMenu({ user }) {
                     <p>{lang === "de" ? "Erfasste Daten: E-Mail, Präsentationen, gekürzte IP, Browser-Infos." : "Collected data: email, presentations, truncated IP, browser info."}</p>
                     <p><strong>{lang === "de" ? "Keine" : "No"}</strong> {lang === "de" ? "Weitergabe an Dritte, kein Tracking." : "third-party sharing, no tracking."}</p>
                     <p>{lang === "de" ? "DSGVO-Anfragen: E-Mail mit Betreff DSGVO: [Anfrage], Antwort: 30 Tage." : "GDPR requests: email with subject GDPR: [request], response: 30 days."}</p>
-                    <p>{lang === "de" ? "Sicherheit: TLS + AES-256 + bcrypt. Backups täglich, 30 Tage." : "Security: TLS + AES-256 + bcrypt. Daily backups, 30-day retention."}</p>
+                    <p>{lang === "de" ? "Sicherheit: TLS + AES-256 + PBKDF2. Backups täglich, 30 Tage." : "Security: TLS + AES-256 + PBKDF2. Daily backups, 30-day retention."}</p>
                   </div>
                 </LegalAccordion>
                 <LegalAccordion title={lang === "de" ? "Nutzungsbedingungen" : "Terms of Use"} icon={<FileText className="w-4 h-4" />}>

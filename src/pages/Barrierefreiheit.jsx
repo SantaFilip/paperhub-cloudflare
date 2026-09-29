@@ -80,8 +80,9 @@ export default function Barrierefreiheit() {
       <H2>{de ? "Durchsetzung" : "Enforcement"}</H2>
       <P>
         {de
-          ? "Bleibt deine Anfrage ohne zufriedenstellende Lösung, kannst du dich an die Marktüberwachungsstelle der Länder für die Barrierefreiheit von Produkten und Dienstleistungen (MLBF) in Magdeburg wenden."
-          : "If your request is not resolved satisfactorily, you can contact the German market surveillance authority for the accessibility of products and services (MLBF) in Magdeburg."}
+          ? "Bleibt deine Anfrage ohne zufriedenstellende Lösung, kannst du dich an die Marktüberwachungsstelle der Länder für die Barrierefreiheit von Produkten und Dienstleistungen (MLBF) in Magdeburg wenden: "
+          : "If your request is not resolved satisfactorily, you can contact the German market surveillance authority for the accessibility of products and services (MLBF) in Magdeburg: "}
+        <a href="https://www.mlbf-barrierefrei.de/" className="text-[#1D4ED8]">www.mlbf-barrierefrei.de</a>
       </P>
     </LegalPage>
   );
