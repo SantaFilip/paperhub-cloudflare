@@ -100,13 +100,48 @@ export function getLicenseUrl(license) {
   return LICENSE_URLS[license] || null;
 }
 /**
- * Licences under which no preview image (thumbnail) may be shown. The first
- * slide is a reproduction of the work, so it is withheld for these — also for
- * uploads made before this rule existed, because the worker strips the
- * thumbnail when the record is read, not when it is written.
+ * Licences under which no preview image (thumbnail) may be shown: the ones
+ * that grant no licence at all, and the ones forbidding derivatives. The same
+ * two grounds gate the download below, so a presentation that may be handed
+ * out may also be previewed.
+ *
+ * NonCommercial is deliberately not here. NC restricts what a downstream user
+ * may do with the work; it does not bar the archive the author uploaded it to
+ * from showing a preview of it.
+ *
+ * It is applied when the record is read, not when it is written, so it also
+ * covers uploads made before the rule existed.
  */
-export const THUMBNAIL_HIDDEN_LICENSES = ["All Rights Reserved", "CC BY-NC-ND 4.0", "CC BY-NC 4.0"];
+export const THUMBNAIL_HIDDEN_LICENSES = [
+  "All Rights Reserved",
+  "CC BY-ND 4.0",
+  "CC BY-NC-ND 4.0",
+];
 
 export function hidesThumbnail(license) {
   return THUMBNAIL_HIDDEN_LICENSES.includes(license);
+}
+
+/**
+ * True when nobody may be handed this presentation's files.
+ *
+ * The rule is the one the detail page has always shown: a third-party upload
+ * is withheld when the presentation carries no licence at all, or when the
+ * paper behind it forbids derivatives. An upload by the paper's own author is
+ * never withheld — they are the rightsholder.
+ *
+ * It reads only the record, never who is asking, so the worker can apply it
+ * before serving a byte and the page can apply it before offering a button.
+ * Both import it from here, so the two cannot drift apart — which is what
+ * happened before, when the rule lived only in the page and the files stayed
+ * reachable by URL.
+ *
+ * D1 returns booleans as 0/1 on raw queries and as true/false through the
+ * entity layer, hence the loose checks.
+ */
+export function blocksDownload(presentation) {
+  if (!presentation) return false;
+  if (presentation.is_author === true || presentation.is_author === 1) return false;
+  if (presentation.license === "All Rights Reserved") return true;
+  return presentation.has_nd_restriction === true || presentation.has_nd_restriction === 1;
 }

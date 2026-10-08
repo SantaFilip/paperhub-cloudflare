@@ -13,7 +13,7 @@ import LicenseBadge from "@/components/LicenseBadge";
 import LicenseInfoPanel from "@/components/LicenseInfoPanel";
 import SidebarLicenseEditor from "@/components/SidebarLicenseEditor";
 import DownloadConsentModal from "@/components/DownloadConsentModal";
-import { LICENSE_VALUES, getLicenseUrl, hidesThumbnail } from "@/lib/licenseUtils";
+import { LICENSE_VALUES, getLicenseUrl, hidesThumbnail, blocksDownload } from "@/lib/licenseUtils";
 import JsonLd from "@/components/JsonLd";
 import MetaRobots from "@/components/MetaRobots";
 import usePageTitle from "@/hooks/usePageTitle";
@@ -587,11 +587,13 @@ export default function PresentationDetail() {
               {/* Actions */}
               <div className="flex flex-wrap gap-3">
                 {(() => {
-                  const isAuthorUpload = presentation.is_author === true;
-                  const isNDBlocked = presentation.has_nd_restriction && !isAuthorUpload;
-                  const isARRBlocked = presentation.license === "All Rights Reserved" && !isAuthorUpload;
+                  // Same rule the worker applies before serving a byte; both
+                  // read blocksDownload() so they cannot drift apart.
+                  const withheld = blocksDownload(presentation);
+                  const isNDBlocked = withheld && presentation.has_nd_restriction;
+                  const isARRBlocked = withheld && !isNDBlocked;
                   const hasFile = !!presentation.file_url;
-                  const canDownload = hasFile && !isNDBlocked && !isARRBlocked;
+                  const canDownload = hasFile && !withheld;
 
                   if (isNDBlocked) return (
                     <div key="nd" className="flex items-start gap-3 w-full p-4 bg-red-50 border border-red-200 rounded-lg">

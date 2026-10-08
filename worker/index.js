@@ -11,7 +11,7 @@ import { getUser, requireUser } from "./lib/auth.js";
 import { createRecord, deleteRecord, listRecords, updateRecord } from "./lib/entities.js";
 import { HttpError, badRequest, json, newId, notFound } from "./lib/util.js";
 import { handleAuth } from "./routes/auth.js";
-import { hidesThumbnail } from "../src/lib/licenseUtils.js";
+import { blocksDownload, hidesThumbnail } from "../src/lib/licenseUtils.js";
 
 import downloadPresentation from "./functions/downloadPresentation.js";
 import extractFileText from "./functions/extractFileText.js";
@@ -77,8 +77,29 @@ async function isWithheldThumbnail(key, env) {
   return (rows.results || []).some((row) => hidesThumbnail(row.license));
 }
 
+/**
+ * True if the key belongs to a presentation whose files may not be handed out.
+ * The detail page hides the download button for these, but the button was the
+ * only thing stopping anyone: the record still carries `file_url`, and this
+ * route served it to whoever asked. The rule has to live here to mean anything.
+ */
+async function isWithheldFile(key, env) {
+  // Images are presentation thumbnails; isWithheldThumbnail already judged them.
+  if (/\.(png|jpe?g|webp|gif)$/i.test(key)) return false;
+  // Suffix match without LIKE: D1 rejects LIKE patterns longer than 50 bytes.
+  const suffix = `/files/${key}`;
+  const rows = await env.DB.prepare(
+    "SELECT license, has_nd_restriction, is_author FROM presentations " +
+      "WHERE substr(file_url, -length(?1)) = ?1 OR substr(handout_url, -length(?1)) = ?1"
+  )
+    .bind(suffix)
+    .all();
+  return (rows.results || []).some((row) => blocksDownload(row));
+}
+
 async function serveFile(key, env, request) {
   if (await isWithheldThumbnail(key, env)) throw notFound("File not found");
+  if (await isWithheldFile(key, env)) throw notFound("File not found");
   const object = await env.FILES.get(key);
   if (!object) throw notFound("File not found");
 

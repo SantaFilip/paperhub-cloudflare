@@ -4,9 +4,10 @@
 
 import JSZip from "jszip";
 import { getLicenseDetails } from "../../src/lib/licenseDetails.js";
+import { blocksDownload } from "../../src/lib/licenseUtils.js";
 import { serviceRole } from "../lib/entities.js";
 import { readStoredFile } from "../lib/files.js";
-import { HttpError, badRequest, notFound, nowIso, readJson } from "../lib/util.js";
+import { HttpError, badRequest, forbidden, notFound, nowIso, readJson } from "../lib/util.js";
 
 const CC_URLS = {
   "CC0 1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -27,6 +28,11 @@ export default async function downloadPresentation(request, env, user) {
   const rows = await serviceRole.list(env, "Presentations", { filter: { id: presentation_id }, limit: 1 });
   const presentation = rows[0];
   if (!presentation) throw notFound("Presentation not found");
+  // The detail page hides the button for these; refuse here too, so calling
+  // the endpoint directly is not a way around it.
+  if (blocksDownload(presentation)) {
+    throw forbidden("This presentation may not be downloaded under its licence");
+  }
   if (!presentation.file_url) throw badRequest("No file available");
 
   const dlMode = mode || "presentation";
