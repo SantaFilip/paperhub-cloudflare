@@ -15,12 +15,14 @@ import Impressum from '@/pages/Impressum';
 import Datenschutz from '@/pages/Datenschutz';
 import Agb from '@/pages/Agb';
 import Haftungsausschluss from '@/pages/Haftungsausschluss';
+import Barrierefreiheit from '@/pages/Barrierefreiheit';
 import Browse from '@/pages/Browse';
 import PresentationDetail from '@/pages/PresentationDetail';
 import Upload from '@/pages/Upload';
 import Profile from '@/pages/Profile';
 import PublicProfile from '@/pages/PublicProfile';
 import { LanguageProvider } from '@/lib/LanguageContext';
+import RouteA11y from '@/components/a11y/RouteA11y';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -30,7 +32,7 @@ const AuthenticatedApp = () => {
       <div className="fixed inset-0 flex items-center justify-center bg-[#FDFDFD]">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-4 border-slate-200 border-t-[#2563EB] rounded-full animate-spin" />
-          <p className="text-sm text-slate-400 font-body">PaperHub wird geladen…</p>
+          <p role="status" className="text-sm text-slate-600 font-body">PaperHub wird geladen…</p>
         </div>
       </div>
     );
@@ -66,6 +68,7 @@ function App() {
       <AuthProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
+            <RouteA11y />
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/landing" element={<Navigate to="/" replace />} />
@@ -77,6 +80,7 @@ function App() {
               <Route path="/datenschutz" element={<Datenschutz />} />
               <Route path="/agb" element={<Agb />} />
               <Route path="/haftungsausschluss" element={<Haftungsausschluss />} />
+              <Route path="/barrierefreiheit" element={<Barrierefreiheit />} />
               <Route path="*" element={<AuthenticatedApp />} />
             </Routes>
           </Router>

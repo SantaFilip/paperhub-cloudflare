@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
+import { hidesThumbnail } from "@/lib/licenseUtils";
 import { useLang, disciplineLabelDE } from "@/lib/LanguageContext";
 import { BookOpen, Download, ArrowLeft, GraduationCap, CheckCircle, FileDown, EyeOff, Star } from "lucide-react";
 
@@ -52,7 +53,7 @@ export default function PublicProfile() {
 
   if (error) return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
-      <BookOpen className="w-12 h-12 text-slate-400 mb-4" />
+      <BookOpen className="w-12 h-12 text-slate-500 mb-4" />
       <h2 className="font-heading text-2xl text-[#0F172A] mb-2">{lang === "de" ? "Profil konnte nicht geladen werden" : "Profile could not be loaded"}</h2>
       <Link to="/browse" className="text-[#2563EB] hover:underline">{lang === "de" ? "Zurück zur Übersicht" : "Back to browse"}</Link>
     </div>
@@ -60,7 +61,7 @@ export default function PublicProfile() {
 
   if (!data?.found) return (
     <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
-      <BookOpen className="w-12 h-12 text-slate-400 mb-4" />
+      <BookOpen className="w-12 h-12 text-slate-500 mb-4" />
       <h2 className="font-heading text-2xl text-[#0F172A] mb-2">{lang === "de" ? "Profil nicht gefunden" : "Profile not found"}</h2>
       <Link to="/browse" className="text-[#2563EB] hover:underline">{lang === "de" ? "Zurück zur Übersicht" : "Back to browse"}</Link>
     </div>
@@ -76,7 +77,7 @@ export default function PublicProfile() {
             </div>
             <div>
               <h1 className="font-heading text-2xl lg:text-3xl font-semibold">{data.name}</h1>
-              <p className="text-slate-400 text-sm mt-1 flex items-center gap-1.5">
+              <p className="text-slate-300 text-sm mt-1 flex items-center gap-1.5">
                 <EyeOff className="w-4 h-4" />
                 {lang === "de" ? "Dieses Profil ist privat." : "This profile is private."}
               </p>
@@ -112,7 +113,7 @@ export default function PublicProfile() {
               <h1 className="font-heading text-2xl lg:text-3xl font-semibold mb-1 break-words">{data.name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {data.university && (
-                  <span className="text-slate-400 text-sm flex items-center gap-1.5">
+                  <span className="text-slate-300 text-sm flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4" /> {data.university}
                   </span>
                 )}
@@ -134,11 +135,11 @@ export default function PublicProfile() {
           <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-white/10">
             <div className="text-center">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">{data.stats.count}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{lang === "de" ? "Veröffentlichungen" : "Publications"}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{lang === "de" ? "Veröffentlichungen" : "Publications"}</p>
             </div>
             <div className="text-center">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">{data.stats.totalDownloads}</p>
-              <p className="text-xs text-slate-400 mt-0.5">{lang === "de" ? "Downloads" : "Downloads"}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{lang === "de" ? "Downloads" : "Downloads"}</p>
             </div>
           </div>
         </div>
@@ -158,7 +159,7 @@ export default function PublicProfile() {
 
         {data.presentations.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
-            <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+            <BookOpen className="w-10 h-10 text-slate-500 mx-auto mb-3" />
             <p className="text-slate-500 text-sm">{lang === "de" ? "Noch keine Veröffentlichungen." : "No publications yet."}</p>
           </div>
         ) : (
@@ -167,11 +168,11 @@ export default function PublicProfile() {
               <Link key={p.id} to={`/presentation/${p.id}`} className="bg-white border border-slate-200 rounded-xl overflow-hidden hover:shadow-md hover:border-slate-300 transition-all flex">
                 <div className="hidden sm:flex flex-shrink-0 items-center p-3">
                   <div className="rounded-lg overflow-hidden bg-slate-100 border border-slate-200" style={{ width: "160px", aspectRatio: "16/9" }}>
-                    {p.thumbnail_url ? (
+                    {p.thumbnail_url && !hidesThumbnail(p.license) ? (
                       <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-slate-300" />
+                        <BookOpen className="w-6 h-6 text-slate-500" />
                       </div>
                     )}
                   </div>
@@ -185,7 +186,7 @@ export default function PublicProfile() {
                     <p className="text-xs text-slate-500 line-clamp-1">{lang === "de" ? "Paper:" : "Paper:"} {p.paper_title}</p>
                   )}
                   {p.doi && (
-                    <p className="text-xs text-slate-400 font-mono mt-0.5 truncate">DOI: {p.doi}</p>
+                    <p className="text-xs text-slate-500 font-mono mt-0.5 truncate">DOI: {p.doi}</p>
                   )}
                   <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
                     <span className="flex items-center gap-1"><Download className="w-3 h-3" /> {p.downloads}</span>
@@ -193,7 +194,7 @@ export default function PublicProfile() {
                       <span className="flex items-center gap-1 text-[#2563EB]"><FileDown className="w-3 h-3" /> {lang === "de" ? "Handout" : "Handout"}</span>
                     )}
                     {p.rating_count > 0 && (
-                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-500" /> {p.avg_rating.toFixed(1)} ({p.rating_count})</span>
+                      <span className="flex items-center gap-1"><Star className="w-3 h-3 text-amber-700" /> {p.avg_rating.toFixed(1)} ({p.rating_count})</span>
                     )}
                     <span className="ml-auto">{formatDate(p.created_date)}</span>
                   </div>

@@ -72,11 +72,37 @@ async function logAudit({ userId, userEmail, userName, doi, method, result, matc
   }).catch(() => {}); // fire-and-forget, never block UI
 }
 
-export default function AuthorshipVerifier({ doi, userEmail, userName, userId, lang, onVerified }) {
+const fullName = (a) => [a.given, a.family].filter(Boolean).join(" ");
+
+// requireSoleAuthor: the claim is "I am the only author", so a paper that
+// CrossRef lists with several authors fails regardless of who matches.
+export default function AuthorshipVerifier({ doi, userEmail, userName, userId, lang, onVerified, requireSoleAuthor = false }) {
   const [status, setStatus] = useState("idle"); // idle | loading | verified | failed | error
   const [result, setResult] = useState(null);
   const [orcidInput, setOrcidInput] = useState("");
   const [showOrcid, setShowOrcid] = useState(false);
+
+  const failMultipleAuthors = (authors) => {
+    setStatus("failed");
+    setResult({
+      method: "multiple_authors",
+      authorList: authors.slice(0, 5).map(fullName).join(", ") + (authors.length > 5 ? " …" : ""),
+      message: lang === "de"
+        ? `Laut CrossRef hat dieses Paper ${authors.length} Autoren. Ein Upload als alleiniger Autor ist nicht möglich.`
+        : `According to CrossRef this paper has ${authors.length} authors. Uploading as sole author is not possible.`,
+    });
+    onVerified(false);
+  };
+
+  // Author list from CrossRef, or null when CrossRef cannot be reached.
+  const fetchCrossrefAuthors = async () => {
+    const resp = await fetch(`https://api.crossref.org/works/${encodeURIComponent(doi.trim())}`, {
+      headers: { "User-Agent": "PaperHub/1.0 (mailto:paperhub@example.com)" }
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    return data?.message?.author || [];
+  };
 
   const verifyViaOrcid = async () => {
     const orcidId = normalizeOrcid(orcidInput);
@@ -117,6 +143,21 @@ export default function AuthorshipVerifier({ doi, userEmail, userName, userId, l
           if (found) break;
         }
         if (found) break;
+      }
+
+      if (found && requireSoleAuthor) {
+        const authors = await fetchCrossrefAuthors().catch(() => null);
+        if (authors === null) {
+          setStatus("error");
+          setResult({ error: lang === "de" ? "Autorenanzahl konnte über CrossRef nicht geprüft werden." : "Could not check the number of authors via CrossRef." });
+          onVerified(false);
+          return;
+        }
+        if (authors.length > 1) {
+          logAudit({ userId, userEmail, userName, doi, method: "orcid", result: false, orcidId });
+          failMultipleAuthors(authors);
+          return;
+        }
       }
 
       if (found) {
@@ -171,6 +212,12 @@ export default function AuthorshipVerifier({ doi, userEmail, userName, userId, l
             : "CrossRef has no author data for this paper."
         });
         onVerified(false);
+        return;
+      }
+
+      if (requireSoleAuthor && authors.length > 1) {
+        logAudit({ userId, userEmail, userName, doi, method: "crossref_sole_author", result: false });
+        failMultipleAuthors(authors);
         return;
       }
 
@@ -259,6 +306,7 @@ export default function AuthorshipVerifier({ doi, userEmail, userName, userId, l
             <div className="flex items-center gap-2">
               <input
                 type="text"
+                aria-label="ORCID iD"
                 value={orcidInput}
                 onChange={(e) => setOrcidInput(e.target.value)}
                 placeholder="0000-0001-2345-6789"
@@ -272,23 +320,23 @@ export default function AuthorshipVerifier({ doi, userEmail, userName, userId, l
               >
                 {lang === "de" ? "Prüfen" : "Verify"}
               </button>
-              <button type="button" onClick={() => setShowOrcid(false)} className="text-xs text-slate-400 hover:text-slate-600">✕</button>
+              <button type="button" onClick={() => setShowOrcid(false)} aria-label={lang === "de" ? "ORCID-Eingabe schließen" : "Close ORCID input"} className="p-1.5 text-xs text-slate-600 hover:text-slate-800"><span aria-hidden="true">✕</span></button>
             </div>
           )}
         </div>
       )}
 
       {status === "loading" && (
-        <div className="flex items-center gap-2 text-sm text-slate-500 py-2">
+        <div role="status" className="flex items-center gap-2 text-sm text-slate-600 py-2">
           <Loader2 className="w-4 h-4 animate-spin" />
           {lang === "de" ? "Wird abgefragt…" : "Verifying…"}
         </div>
       )}
 
       {status === "verified" && result && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div role="status" className="p-3 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-start gap-2">
-            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+            <CheckCircle className="w-4 h-4 text-green-700 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-green-800">
                 {lang === "de" ? "✓ Authorship verifiziert" : "✓ Authorship verified"}
@@ -308,12 +356,12 @@ export default function AuthorshipVerifier({ doi, userEmail, userName, userId, l
                   href={`https://orcid.org/${result.orcidId}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-green-600 underline mt-0.5"
+                  className="inline-flex items-center gap-1 text-xs text-green-700 underline mt-0.5"
                 >
                   orcid.org/{result.orcidId} <ExternalLink className="w-3 h-3" />
                 </a>
               )}
-              <button type="button" onClick={reset} className="text-xs text-green-600 underline mt-1 block">
+              <button type="button" onClick={reset} className="text-xs text-green-700 underline mt-1 block">
                 {lang === "de" ? "Zurücksetzen" : "Reset"}
               </button>
             </div>
@@ -322,21 +370,21 @@ export default function AuthorshipVerifier({ doi, userEmail, userName, userId, l
       )}
 
       {(status === "failed" || status === "error") && result && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div role="alert" className="p-3 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-start gap-2">
-            <ShieldX className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+            <ShieldX className="w-4 h-4 text-red-700 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-red-800">
                 {lang === "de" ? "Verifikation fehlgeschlagen" : "Verification failed"}
               </p>
               <p className="text-xs text-red-700 mt-0.5">{result.message || result.error}</p>
               {result.authorList && (
-                <p className="text-xs text-red-600 mt-1">
+                <p className="text-xs text-red-700 mt-1">
                   {lang === "de" ? "Registrierte Autoren: " : "Registered authors: "}{result.authorList}
                 </p>
               )}
               <div className="flex items-center gap-3 mt-2">
-                <button type="button" onClick={reset} className="text-xs text-red-600 underline">
+                <button type="button" onClick={reset} className="text-xs text-red-700 underline">
                   {lang === "de" ? "Nochmal versuchen" : "Try again"}
                 </button>
                 <a

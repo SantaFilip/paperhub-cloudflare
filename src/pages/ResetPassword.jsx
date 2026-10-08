@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Loader2, AlertTriangle } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
+import { useLang } from "@/lib/LanguageContext";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -15,12 +16,13 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { lang } = useLang();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(lang === "de" ? "Die Passwörter stimmen nicht überein." : "Passwords do not match");
       return;
     }
     setLoading(true);
@@ -28,7 +30,7 @@ export default function ResetPassword() {
       await api.auth.resetPassword({ resetToken, newPassword });
       window.location.href = "/login";
     } catch (err) {
-      setError(err.message || "Failed to reset password");
+      setError(err.message || (lang === "de" ? "Passwort konnte nicht zurückgesetzt werden." : "Failed to reset password"));
     } finally {
       setLoading(false);
     }
@@ -38,16 +40,16 @@ export default function ResetPassword() {
     return (
       <AuthLayout
         icon={AlertTriangle}
-        title="Invalid reset link"
-        subtitle="This password reset link is missing or invalid"
+        title={lang === "de" ? "Ungültiger Link" : "Invalid reset link"}
+        subtitle={lang === "de" ? "Dieser Link zum Zurücksetzen fehlt oder ist ungültig" : "This password reset link is missing or invalid"}
         footer={
           <Link to="/forgot-password" className="text-primary font-medium hover:underline">
-            Request a new link
+            {lang === "de" ? "Neuen Link anfordern" : "Request a new link"}
           </Link>
         }
       >
         <p className="text-sm text-foreground text-center">
-          The link you used appears to be incomplete. Please request a new password reset email.
+          {lang === "de" ? "Der verwendete Link scheint unvollständig zu sein. Bitte fordere eine neue E-Mail zum Zurücksetzen an." : "The link you used appears to be incomplete. Please request a new password reset email."}
         </p>
       </AuthLayout>
     );
@@ -56,17 +58,17 @@ export default function ResetPassword() {
   return (
     <AuthLayout
       icon={Lock}
-      title="New password"
-      subtitle="Enter your new password below"
+      title={lang === "de" ? "Neues Passwort" : "New password"}
+      subtitle={lang === "de" ? "Gib unten dein neues Passwort ein" : "Enter your new password below"}
     >
       {error && (
-        <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+        <div role="alert" className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
           {error}
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="password">New Password</Label>
+          <Label htmlFor="password">{lang === "de" ? "Neues Passwort" : "New password"}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
@@ -74,7 +76,7 @@ export default function ResetPassword() {
               type="password"
               autoComplete="new-password"
               autoFocus
-              placeholder="••••••••"
+              placeholder=""
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               className="pl-10 h-12"
@@ -83,14 +85,14 @@ export default function ResetPassword() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirm">Confirm Password</Label>
+          <Label htmlFor="confirm">{lang === "de" ? "Passwort wiederholen" : "Confirm password"}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
             <Input
               id="confirm"
               type="password"
               autoComplete="new-password"
-              placeholder="••••••••"
+              placeholder=""
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="pl-10 h-12"
@@ -101,11 +103,11 @@ export default function ResetPassword() {
         <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Resetting...
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
+              {lang === "de" ? "Wird zurückgesetzt…" : "Resetting…"}
             </>
           ) : (
-            "Reset password"
+            lang === "de" ? "Passwort zurücksetzen" : "Reset password"
           )}
         </Button>
       </form>

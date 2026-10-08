@@ -99,3 +99,14 @@ export function getLicenseUrl(license) {
   if (!license) return null;
   return LICENSE_URLS[license] || null;
 }
+/**
+ * Licences under which no preview image (thumbnail) may be shown. The first
+ * slide is a reproduction of the work, so it is withheld for these — also for
+ * uploads made before this rule existed, because the worker strips the
+ * thumbnail when the record is read, not when it is written.
+ */
+export const THUMBNAIL_HIDDEN_LICENSES = ["All Rights Reserved", "CC BY-NC-ND 4.0", "CC BY-NC 4.0"];
+
+export function hidesThumbnail(license) {
+  return THUMBNAIL_HIDDEN_LICENSES.includes(license);
+}

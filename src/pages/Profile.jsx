@@ -8,6 +8,7 @@ import {
   LogOut, GraduationCap, Beaker, TrendingUp, Edit3, Save, X, Link2, CheckCircle, Trash2, Shield, AlertCircle
 } from "lucide-react";
 import { useLang } from "@/lib/LanguageContext";
+import { hidesThumbnail } from "@/lib/licenseUtils";
 
 const LICENSES = [
   "CC0 1.0", "CC BY 4.0", "CC BY-SA 4.0", "CC BY-NC 4.0",
@@ -19,6 +20,9 @@ const slugify = (s) => (s || "").trim().replace(/\s+/g, "_").replace(/[^a-zA-Z0-
 function PresentationRowActions({ presentation, lang, onLicenseUpdated, onDeleted }) {
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const confirmButtonRef = useRef(null);
+  // Move focus into the confirmation so keyboard users land on it.
+  useEffect(() => { if (confirmDelete) confirmButtonRef.current?.focus(); }, [confirmDelete]);
   const [deleting, setDeleting] = useState(false);
   const deleteButtonRef = useRef(null);
   const [panelPos, setPanelPos] = useState({ top: 0, right: 0 });
@@ -53,44 +57,57 @@ function PresentationRowActions({ presentation, lang, onLicenseUpdated, onDelete
       {/* License — navigates to detail page at license section */}
       <button
         onClick={(e) => { e.stopPropagation(); e.preventDefault(); navigate(`/presentation/${presentation.id}`); setTimeout(() => document.getElementById("license")?.scrollIntoView({ behavior: "smooth" }), 400); }}
+        type="button"
         title={lang === "de" ? "Lizenz in Detailansicht bearbeiten" : "Edit license in detail view"}
-        className="p-1.5 rounded-md text-slate-400 hover:text-[#2563EB] hover:bg-blue-50 transition-colors"
+        aria-label={lang === "de" ? `Lizenz von „${presentation.title}“ bearbeiten` : `Edit license of “${presentation.title}”`}
+        className="p-1.5 rounded-md text-slate-600 hover:text-[#2563EB] hover:bg-blue-50 transition-colors"
       >
-        <Shield className="w-4 h-4" />
+        <Shield className="w-4 h-4" aria-hidden="true" />
       </button>
 
       {/* Delete */}
       <button
         ref={deleteButtonRef}
         onClick={handleDeleteClick}
+        type="button"
         title={lang === "de" ? "Löschen" : "Delete"}
-        className="p-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+        aria-label={lang === "de" ? `„${presentation.title}“ löschen` : `Delete “${presentation.title}”`}
+        aria-expanded={confirmDelete}
+        className="p-1.5 rounded-md text-slate-600 hover:text-red-700 hover:bg-red-50 transition-colors"
       >
-        <Trash2 className="w-4 h-4" />
+        <Trash2 className="w-4 h-4" aria-hidden="true" />
       </button>
 
       {/* Delete confirm panel — anchored to button position */}
       {confirmDelete && (
         <div
+          role="alertdialog"
+          aria-labelledby={`delete-title-${presentation.id}`}
+          aria-describedby={`delete-desc-${presentation.id}`}
+          onKeyDown={(e) => { if (e.key === "Escape") { setConfirmDelete(false); deleteButtonRef.current?.focus(); } }}
           className="fixed z-50 w-64 bg-white border border-red-200 rounded-xl shadow-xl p-4 space-y-3"
           style={{ top: panelPos.top, right: panelPos.right }}
         >
-          <p className="text-xs font-semibold text-red-700">{lang === "de" ? "Wirklich löschen?" : "Really delete?"}</p>
-          <p className="text-xs text-slate-500">{lang === "de" ? "Diese Aktion kann nicht rückgängig gemacht werden." : "This action cannot be undone."}</p>
+          <p id={`delete-title-${presentation.id}`} className="text-xs font-semibold text-red-700">{lang === "de" ? "Wirklich löschen?" : "Really delete?"}</p>
+          <p id={`delete-desc-${presentation.id}`} className="text-xs text-slate-600">{lang === "de" ? "Diese Aktion kann nicht rückgängig gemacht werden." : "This action cannot be undone."}</p>
           <div className="flex gap-2">
             <button
+              type="button"
+              ref={confirmButtonRef}
               onClick={handleDelete}
               disabled={deleting}
               className="flex-1 py-2 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-1"
             >
-              {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              {deleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" /> : <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />}
               {lang === "de" ? "Löschen" : "Delete"}
             </button>
             <button
-              onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
-              className="px-3 py-2 text-xs text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); deleteButtonRef.current?.focus(); }}
+              aria-label={lang === "de" ? "Abbrechen" : "Cancel"}
+              className="px-3 py-2 text-xs text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-3.5 h-3.5" aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -196,13 +213,14 @@ export default function Profile() {
     .slice(0, 5)
     .map((p) => ({
       name: p.title?.length > 18 ? p.title.slice(0, 18) + "…" : p.title,
+      fullTitle: p.title,
       downloads: p.downloads || 0,
     }));
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" aria-hidden="true" /><span role="status" className="sr-only">{lang === "de" ? "Wird geladen…" : "Loading…"}</span>
       </div>
     );
   }
@@ -238,17 +256,20 @@ export default function Profile() {
                     }
                   </span>
                 </div>
-                <p className="text-slate-400 text-sm mb-0.5">{user?.email}</p>
+                <p className="text-slate-300 text-sm mb-0.5">{user?.email}</p>
                 {editing ? (
                   <div className="mt-3 flex flex-col gap-2">
                     <input
                       type="text"
+                      aria-label={lang === "de" ? "Universität / Institution" : "University / institution"}
+                      autoComplete="organization"
                       value={editForm.university}
                       onChange={(e) => setEditForm((f) => ({ ...f, university: e.target.value }))}
                       placeholder={t.universityPlaceholder}
                       className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2563EB] w-full max-w-xs"
                     />
                     <select
+                      aria-label={lang === "de" ? "Rolle" : "Role"}
                       value={editForm.role}
                       onChange={(e) => setEditForm((f) => ({ ...f, role: e.target.value }))}
                       className="px-3 py-1.5 text-sm bg-white border border-white/20 rounded-lg text-slate-900 focus:outline-none w-full max-w-xs"
@@ -259,6 +280,7 @@ export default function Profile() {
                     </select>
                     <input
                       type="text"
+                      aria-label="ORCID iD"
                       value={editForm.orcid_id}
                       onChange={(e) => setEditForm((f) => ({ ...f, orcid_id: e.target.value.replace(/https?:\/\/orcid\.org\//i, "").trim() }))}
                       placeholder="ORCID: 0000-0001-2345-6789"
@@ -266,12 +288,14 @@ export default function Profile() {
                     />
                     <input
                       type="text"
+                      aria-label={lang === "de" ? "Öffentlicher Nutzername" : "Public username"}
+                      autoComplete="username"
                       value={editForm.username}
                       onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
                       placeholder={lang === "de" ? "Öffentlicher Nutzername (z.B. max-mustermann)" : "Public username (e.g. john-doe)"}
                       className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2563EB] w-full max-w-xs"
                     />
-                    <p className="text-xs text-slate-400 max-w-xs">
+                    <p className="text-xs text-slate-300 max-w-xs">
                       {lang === "de"
                         ? "Verwende deinen echten Namen als öffentlichen Nutzernamen, damit Anmeldename und URL identisch sind (z.B. Filip_Sudermann)."
                         : "Use your real name as your public username so your login name and URL match (e.g. Filip_Sudermann)."}
@@ -296,7 +320,7 @@ export default function Profile() {
                 ) : (
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {user?.university && (
-                      <p className="text-slate-400 text-sm">{user.university}</p>
+                      <p className="text-slate-300 text-sm">{user.university}</p>
                     )}
                     {user?.orcid_id && (
                       <a
@@ -310,10 +334,12 @@ export default function Profile() {
                       </a>
                     )}
                     <button
+                      type="button"
                       onClick={() => setEditing(true)}
-                      className="text-slate-500 hover:text-slate-300 transition-colors"
+                      aria-label={lang === "de" ? "Profil bearbeiten" : "Edit profile"}
+                      className="p-1.5 -m-1.5 text-slate-300 hover:text-white transition-colors"
                     >
-                      <Edit3 className="w-3.5 h-3.5" />
+                      <Edit3 className="w-4 h-4" aria-hidden="true" />
                     </button>
                   </div>
                 )}
@@ -325,7 +351,7 @@ export default function Profile() {
               <div className="inline-flex flex-col items-center lg:items-end">
                 <div className="flex items-center gap-2 mb-0.5">
                   <Award className="w-5 h-5 text-[#B45309]" />
-                  <span className="text-xs text-slate-400 uppercase tracking-wider">{t.knowledgePoints}</span>
+                  <span className="text-xs text-slate-300 uppercase tracking-wider">{t.knowledgePoints}</span>
                 </div>
                 <p className="font-heading text-4xl lg:text-5xl font-bold text-white tabular-nums">
                   <AnimatedCounter value={user?.points || 0} />
@@ -340,19 +366,19 @@ export default function Profile() {
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">
                 {presentations.length}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{t.publications}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{t.publications}</p>
             </div>
             <div className="text-center">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">
                 {totalDownloads}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{t.downloads}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{t.downloads}</p>
             </div>
             <div className="text-center">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">
                 {avgRating > 0 ? avgRating.toFixed(1) : "—"}
               </p>
-              <p className="text-xs text-slate-400 mt-0.5">{t.avgRating}</p>
+              <p className="text-xs text-slate-300 mt-0.5">{t.avgRating}</p>
             </div>
           </div>
         </div>
@@ -364,22 +390,32 @@ export default function Profile() {
         {chartData.length > 0 && (
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="w-5 h-5 text-[#2563EB]" />
+              <TrendingUp className="w-5 h-5 text-[#2563EB]" aria-hidden="true" />
               <h2 className="font-heading text-lg font-semibold text-[#0F172A]">
                 {t.performanceOverview}
               </h2>
             </div>
-            <div className="h-52">
+            {/* The chart is visual only; the table carries the same numbers for screen readers (WCAG 1.1.1). */}
+            <table className="sr-only">
+              <caption>{t.performanceOverview}</caption>
+              <thead><tr><th scope="col">{lang === "de" ? "Präsentation" : "Presentation"}</th><th scope="col">Downloads</th></tr></thead>
+              <tbody>
+                {chartData.map((row, i) => (
+                  <tr key={i}><td>{row.fullTitle}</td><td>{row.downloads}</td></tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="h-52" aria-hidden="true">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} barCategoryGap="30%">
                   <XAxis
                     dataKey="name"
-                    tick={{ fontSize: 11, fill: "#94a3b8" }}
+                    tick={{ fontSize: 11, fill: "#475569" }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: "#94a3b8" }}
+                    tick={{ fontSize: 11, fill: "#475569" }}
                     axisLine={false}
                     tickLine={false}
                     allowDecimals={false}
@@ -423,7 +459,7 @@ export default function Profile() {
 
           {presentations.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-xl p-10 text-center">
-              <BookOpen className="w-10 h-10 text-slate-300 mx-auto mb-3" />
+              <BookOpen className="w-10 h-10 text-slate-500 mx-auto mb-3" />
               <p className="text-slate-500 text-sm mb-4">
                 {t.noPublications}
               </p>
@@ -447,7 +483,7 @@ export default function Profile() {
                       {p.title}
                     </h3>
                     {p.doi && (
-                      <p className="text-xs text-slate-400 font-mono">DOI: {p.doi}</p>
+                      <p className="text-xs text-slate-500 font-mono">DOI: {p.doi}</p>
                     )}
                     <div className="flex items-center gap-3 mt-2">
                       <div className="flex items-center gap-1.5 text-sm text-slate-600">
@@ -455,7 +491,7 @@ export default function Profile() {
                         <span className="tabular-nums font-medium">{p.downloads || 0}</span>
                       </div>
                       <StarRating value={Math.round(p.avg_rating || 0)} readonly size="sm" />
-                      <span className="text-xs text-slate-400">
+                      <span className="text-xs text-slate-500">
                         {p.avg_rating ? p.avg_rating.toFixed(1) : "—"}
                         {p.rating_count ? ` (${p.rating_count})` : ""}
                       </span>
@@ -473,11 +509,11 @@ export default function Profile() {
                   {/* Thumbnail */}
                   <div className="hidden sm:flex flex-shrink-0 items-center py-3 pr-1">
                     <div className="rounded-lg overflow-hidden bg-slate-100 border border-slate-200" style={{ width: "180px", aspectRatio: "16/9" }}>
-                      {p.thumbnail_url ? (
+                      {p.thumbnail_url && !hidesThumbnail(p.license) ? (
                         <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-xs text-slate-400 font-medium text-center px-2">{t.noThumbnail}</span>
+                          <span className="text-xs text-slate-500 font-medium text-center px-2">{t.noThumbnail}</span>
                         </div>
                       )}
                     </div>
@@ -514,7 +550,8 @@ export default function Profile() {
                     setProfileUrlCopied(true);
                     setTimeout(() => setProfileUrlCopied(false), 2000);
                   }}
-                  className="text-xs text-[#2563EB] hover:underline font-medium flex items-center gap-1 flex-shrink-0"
+                  aria-live="polite"
+                  className="text-xs text-[#1D4ED8] hover:underline font-medium flex items-center gap-1 flex-shrink-0 min-h-[24px]"
                 >
                   {profileUrlCopied
                     ? <><CheckCircle className="w-3 h-3" /> {lang === "de" ? "Kopiert" : "Copied"}</>
@@ -524,7 +561,7 @@ export default function Profile() {
             </>
           ) : (
             <div className="flex items-start gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4">
-              <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
                 <p className="text-xs text-amber-800">
                   {lang === "de"
@@ -555,7 +592,7 @@ export default function Profile() {
                 await api.auth.updateMe({ profile_visible: val }).catch(() => setProfileVisibleQuick(!val));
                 setUser((u) => ({ ...u, profile_visible: val }));
               }}
-              className="mt-0.5 w-4 h-4 rounded border-slate-300 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
+              className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0"
             />
             <div>
               <span className="text-sm font-medium text-[#0F172A]">
@@ -574,7 +611,7 @@ export default function Profile() {
         <div className="border-t border-slate-200 pt-6 flex justify-end">
           <button
             onClick={handleLogout}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm text-slate-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
           >
             <LogOut className="w-4 h-4" />
             {t.signOut}

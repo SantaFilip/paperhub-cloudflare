@@ -5,6 +5,7 @@
 // the `rls` blocks of the original Base44 entity schemas one-to-one.
 
 import { badRequest, forbidden, newId, notFound, nowIso, unauthorized } from "./util.js";
+import { hidesThumbnail } from "../../src/lib/licenseUtils.js";
 
 const BOOL = "bool";
 const NUM = "num";
@@ -20,6 +21,7 @@ export const ENTITIES = {
       paper_title: 1, paper_license: 1, has_nd_restriction: BOOL, extra_papers: JSON_COL,
       discipline: 1, paper_type: 1, license: 1, is_author: BOOL,
       authorship_verified: BOOL, authorship_method: 1, authorship_matched_author: 1,
+      ai_generated_content: BOOL,
       download_allowed: BOOL, tags: 1, uploader_id: 1, uploader_name: 1,
       uploader_university: 1, avg_rating: NUM, rating_count: NUM, downloads: NUM,
     },
@@ -88,6 +90,9 @@ function fromRow(entity, row) {
       }
     }
   }
+  // Restricted licences never expose a preview image. Stripping it on read
+  // rather than on write covers every upload made before the rule existed.
+  if (entity.table === "presentations" && hidesThumbnail(out.license)) out.thumbnail_url = null;
   return out;
 }
 

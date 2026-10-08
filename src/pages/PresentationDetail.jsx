@@ -6,27 +6,36 @@ import DoiLink from "@/components/DoiLink";
 import { useLang, disciplineLabelDE } from "@/lib/LanguageContext";
 import { ExternalLink, Play, ArrowLeft, Loader2,
   MessageSquare, User, Calendar, Tag, BookOpen, Send,
-  Pencil, X, CheckCircle, Image, FileDown, Plus, Trash2, Archive,   AlertCircle, Link2, Flag
+  Pencil, X, CheckCircle, Image, FileDown, Plus, Trash2, Archive, AlertCircle, Link2, Flag, Sparkles
 } from "lucide-react";
+import { AlexandriaBackdrop } from "@/components/AlexandriaScene";
 import LicenseBadge from "@/components/LicenseBadge";
 import LicenseInfoPanel from "@/components/LicenseInfoPanel";
 import SidebarLicenseEditor from "@/components/SidebarLicenseEditor";
 import DownloadConsentModal from "@/components/DownloadConsentModal";
-import { LICENSE_VALUES, getLicenseUrl } from "@/lib/licenseUtils";
+import { LICENSE_VALUES, getLicenseUrl, hidesThumbnail } from "@/lib/licenseUtils";
 import JsonLd from "@/components/JsonLd";
 import MetaRobots from "@/components/MetaRobots";
+import usePageTitle from "@/hooks/usePageTitle";
 
 // Extracted to prevent focus loss on re-render
 function ExtraPaperRow({ index, doi, title, onUpdate, onRemove }) {
+  const { lang } = useLang();
   return (
-    <div className="border border-slate-200 rounded-lg p-3 space-y-2 bg-slate-50">
+    <fieldset className="border border-slate-200 rounded-lg p-3 space-y-2 bg-slate-50">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-500">Paper {index + 2}</span>
-        <button type="button" onClick={onRemove} className="text-slate-400 hover:text-red-500 transition-colors">
-          <Trash2 className="w-3.5 h-3.5" />
+        <legend className="text-xs font-medium text-slate-700">Paper {index + 2}</legend>
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={lang === "de" ? `Paper ${index + 2} entfernen` : `Remove paper ${index + 2}`}
+          className="p-1.5 -m-1.5 text-slate-600 hover:text-red-700 transition-colors"
+        >
+          <Trash2 className="w-4 h-4" aria-hidden="true" />
         </button>
       </div>
       <input
+        aria-label={`DOI – Paper ${index + 2}`}
         type="text"
         defaultValue={doi}
         onBlur={(e) => onUpdate("doi", e.target.value)}
@@ -35,6 +44,7 @@ function ExtraPaperRow({ index, doi, title, onUpdate, onRemove }) {
         className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white font-mono ${doi && !/^10\.\d{4,}\/.+/.test(doi) ? "border-red-300" : "border-slate-200"}`}
       />
       <input
+        aria-label={`${lang === "de" ? "Titel" : "Title"} – Paper ${index + 2}`}
         type="text"
         defaultValue={title}
         onBlur={(e) => onUpdate("title", e.target.value)}
@@ -42,7 +52,7 @@ function ExtraPaperRow({ index, doi, title, onUpdate, onRemove }) {
         placeholder="Paper title…"
         className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white"
       />
-    </div>
+    </fieldset>
   );
 }
 
@@ -87,6 +97,7 @@ export default function PresentationDetail() {
   const id = window.location.pathname.split("/presentation/")[1];
 
   const [presentation, setPresentation] = useState(null);
+  usePageTitle(presentation?.title);
   const [comments, setComments] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [user, setUser] = useState(null);
@@ -159,6 +170,7 @@ export default function PresentationDetail() {
 
   const [downloading, setDownloading] = useState(null); // 'presentation' | 'handout' | 'both'
   const [consentModal, setConsentModal] = useState(null); // null | 'presentation' | 'handout' | 'both'
+  const [downloadError, setDownloadError] = useState(null);
   const [paperAuthors, setPaperAuthors] = useState(null);
   const [authorsExpanded, setAuthorsExpanded] = useState(false);
 
@@ -239,19 +251,29 @@ export default function PresentationDetail() {
     return { licenseText, noticeText, metadata, licenseId };
   };
 
+  // The dialog unmounts on close, so focus is handed back to the button that
+  // opened it here rather than by the dialog itself (WCAG 2.4.3).
+  const downloadTriggerRef = React.useRef(null);
+  const closeConsentModal = () => {
+    setConsentModal(null);
+    setTimeout(() => downloadTriggerRef.current?.focus(), 0);
+  };
+
   const handleDownloadRequest = (mode) => {
+    downloadTriggerRef.current = document.activeElement;
     setConsentModal(mode);
   };
 
   const handleConsentConfirmed = async () => {
     const mode = consentModal;
-    setConsentModal(null);
+    closeConsentModal();
     await handleDownload(mode);
   };
 
   const handleDownload = async (mode = "presentation") => {
     if (!presentation?.file_url) return;
     setDownloading(mode);
+    setDownloadError(null);
 
     try {
       // Fetched directly rather than through the client: the response is a ZIP
@@ -288,14 +310,12 @@ export default function PresentationDetail() {
         api.analytics.track({ eventName: "handout_downloaded", properties: { presentation_id: presentation.id } });
       }
     } catch {
-      // Fallback: direct file download (no ZIP/license files)
-      const a = document.createElement("a");
-      a.href = mode === "handout" ? presentation.handout_url : presentation.file_url;
-      a.download = "";
-      a.target = "_blank";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // No fallback to the raw file: a download must always carry its licence.
+      setDownloadError(
+        lang === "de"
+          ? "Der Download ist fehlgeschlagen. Bitte versuche es später erneut."
+          : "The download failed. Please try again later."
+      );
     } finally {
       setDownloading(null);
     }
@@ -371,7 +391,7 @@ export default function PresentationDetail() {
       updates.handout_uploaded_by = user?.id || null;
       updates.handout_downloads = 0;
     }
-    if (editThumbnail) {
+    if (editThumbnail && !hidesThumbnail(editLicense)) {
       const res = await api.integrations.Core.UploadFile({ file: editThumbnail });
       updates.thumbnail_url = res.file_url;
     }
@@ -400,16 +420,19 @@ export default function PresentationDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
+      // Same ground as the loaded page, so it does not flash white first.
+      <div className="flex items-center justify-center min-h-screen ph-parchment">
+        <AlexandriaBackdrop />
+        <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" aria-hidden="true" /><span role="status" className="sr-only">{lang === "de" ? "Wird geladen…" : "Loading…"}</span>
       </div>
     );
   }
 
   if (!presentation) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
-        <BookOpen className="w-12 h-12 text-slate-400 mb-4" />
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 ph-parchment">
+        <AlexandriaBackdrop />
+        <BookOpen className="w-12 h-12 text-slate-500 mb-4" />
         <h2 className="font-heading text-2xl text-[#0F172A] mb-2">{t.notFound}</h2>
         <Link to="/browse" className="text-[#2563EB] hover:underline">{t.backToBrowse}</Link>
       </div>
@@ -437,7 +460,8 @@ export default function PresentationDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD]">
+    <div className="min-h-screen ph-parchment">
+      <AlexandriaBackdrop />
       <JsonLd data={jsonLd} />
       <MetaRobots license={presentation.license} />
       {/* Consent Modal */}
@@ -446,17 +470,18 @@ export default function PresentationDetail() {
           presentation={presentation}
           mode={consentModal}
           onConfirm={handleConsentConfirmed}
-          onCancel={() => setConsentModal(null)}
+          onCancel={closeConsentModal}
         />
       )}
 
       {/* Back */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 mb-4">
         <button
+          type="button"
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-[#0F172A] transition-colors"
+          className="inline-flex items-center gap-1.5 min-h-[24px] text-sm text-slate-600 hover:text-[#0F172A] transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
           {t.backToBrowse}
         </button>
       </div>
@@ -490,7 +515,7 @@ export default function PresentationDetail() {
                   {presentation.uploader_id ? (
                     <Link to={`/u/${presentation.uploader_id}`} className="font-medium text-[#0F172A] text-sm hover:text-[#2563EB] hover:underline inline-flex items-center gap-1">
                       {presentation.uploader_name || t.anonymous}
-                      <Link2 className="w-3 h-3 text-slate-400" />
+                      <Link2 className="w-3 h-3 text-slate-500" />
                     </Link>
                   ) : (
                     <p className="font-medium text-[#0F172A] text-sm">
@@ -501,10 +526,10 @@ export default function PresentationDetail() {
                     <p className="text-xs text-slate-500">{presentation.uploader_university}</p>
                   )}
                 </div>
-                <div className="ml-auto flex items-center gap-3 text-xs text-slate-400">
+                <div className="ml-auto flex items-center gap-3 text-xs text-slate-500">
                   <a
                     href={`mailto:info@filipsudermann.com?subject=${encodeURIComponent((lang === "de" ? "Urheberrechts-Beschwerde: " : "Copyright complaint: ") + (presentation.title || ""))}&body=${encodeURIComponent((lang === "de" ? "Bitte beschreibe die Verletzung:\n\nPräsentation: " : "Please describe the infringement:\n\nPresentation: ") + (presentation.title || "") + "\nDOI: " + (presentation.doi || "—") + "\nURL: " + (window.location.href))}`}
-                    className="inline-flex items-center gap-1 text-slate-400 hover:text-red-600 transition-colors"
+                    className="inline-flex items-center gap-1 text-slate-500 hover:text-red-700 transition-colors"
                     title={lang === "de" ? "Inhalt melden" : "Report content"}
                   >
                     <Flag className="w-3.5 h-3.5" />
@@ -520,7 +545,7 @@ export default function PresentationDetail() {
               {/* Tags */}
               {tags.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap mb-6">
-                  <Tag className="w-4 h-4 text-slate-400" />
+                  <Tag className="w-4 h-4 text-slate-500" />
                   {tags.map((tag) => (
                     <span key={tag} className="text-xs px-2.5 py-1 bg-slate-50 border border-slate-200 text-slate-600 rounded-full">
                       {tag}
@@ -531,14 +556,33 @@ export default function PresentationDetail() {
 
               {/* Thumbnail 16:9 box */}
               <div className="mb-6 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 w-full" style={{ aspectRatio: "16/9" }}>
-                {presentation.thumbnail_url ? (
-                  <img src={presentation.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                {presentation.thumbnail_url && !hidesThumbnail(presentation.license) ? (
+                  <img
+                    src={presentation.thumbnail_url}
+                    alt={lang === "de" ? `Vorschau der ersten Folie: ${presentation.title}` : `Preview of the first slide: ${presentation.title}`}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-sm text-slate-400 font-medium">No thumbnail</span>
+                  <div className="w-full h-full flex items-center justify-center px-6 text-center">
+                    <p className="text-sm text-slate-600 font-medium">
+                      {hidesThumbnail(presentation.license)
+                        ? (lang === "de"
+                            ? `Keine Vorschau – die Lizenz (${presentation.license}) erlaubt kein Vorschaubild.`
+                            : `No preview – the license (${presentation.license}) does not allow a preview image.`)
+                        : (lang === "de" ? "Keine Vorschau vorhanden" : "No preview available")}
+                    </p>
                   </div>
                 )}
               </div>
+
+              {presentation.ai_generated_content && (
+                <p className="mb-6 flex items-start gap-2 p-3 bg-violet-50 border border-violet-200 rounded-lg text-sm text-violet-900">
+                  <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  {lang === "de"
+                    ? "Hinweis: Diese Präsentation enthält laut Uploader KI-generierte Inhalte."
+                    : "Notice: According to the uploader, this presentation contains AI-generated content."}
+                </p>
+              )}
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3">
@@ -551,7 +595,7 @@ export default function PresentationDetail() {
 
                   if (isNDBlocked) return (
                     <div key="nd" className="flex items-start gap-3 w-full p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-red-700 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-red-800">
                           {lang === "de" ? "Nicht verfügbar — ND-Lizenz" : "Not available — ND License"}
@@ -574,7 +618,7 @@ export default function PresentationDetail() {
 
                   if (isARRBlocked || !hasFile) return (
                     <div key="arr" className="flex items-start gap-3 w-full p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                      <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-amber-800">
                           {lang === "de" ? "Nur Metadaten verfügbar" : "Metadata only"}
@@ -611,7 +655,7 @@ export default function PresentationDetail() {
                         {downloading === "presentation" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Archive className="w-4 h-4" />}
                         {t.downloadPresentation || "Download Presentation"}
                         {presentation.downloads > 0 && (
-                          <span className="ml-1 text-slate-400 text-xs">({presentation.downloads})</span>
+                          <span className="ml-1 text-slate-500 text-xs">({presentation.downloads})</span>
                         )}
                       </button>
                       {hasApprovedHandout && (
@@ -623,7 +667,7 @@ export default function PresentationDetail() {
                           {downloading === "handout" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4 text-[#2563EB]" />}
                           {lang === "de" ? "Handout herunterladen" : "Download Handout"}
                           {presentation.handout_downloads > 0 && (
-                            <span className="ml-1 text-slate-400 text-xs">({presentation.handout_downloads})</span>
+                            <span className="ml-1 text-slate-500 text-xs">({presentation.handout_downloads})</span>
                           )}
                         </button>
                       )}
@@ -654,6 +698,14 @@ export default function PresentationDetail() {
                 )}
 
               </div>
+              <div role="alert" aria-live="assertive">
+                {downloadError && (
+                  <p className="mt-3 flex items-center gap-2 text-sm text-red-700">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                    {downloadError}
+                  </p>
+                )}
+              </div>
 
               {/* Owner Edit Panel trigger */}
               <div className="flex flex-wrap gap-3 mt-3">
@@ -681,16 +733,22 @@ export default function PresentationDetail() {
                     <h3 className="font-heading text-base font-semibold text-[#0F172A]">
                       {t.editPresentation || "Edit Presentation"}
                     </h3>
-                    <button onClick={() => setEditOpen(false)} className="text-slate-400 hover:text-slate-600">
-                      <X className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={() => setEditOpen(false)}
+                      aria-label={lang === "de" ? "Bearbeitung schließen" : "Close editing"}
+                      className="p-1.5 -m-1.5 text-slate-600 hover:text-slate-800"
+                    >
+                      <X className="w-4 h-4" aria-hidden="true" />
                     </button>
                   </div>
 
                   {/* Discipline */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-[#0F172A]">{t.disciplineLabel}</label>
+                      <label htmlFor="edit-discipline" className="block text-sm font-medium text-[#0F172A]">{t.disciplineLabel}</label>
                       <select
+                        id="edit-discipline"
                         value={editDiscipline}
                         onChange={(e) => setEditDiscipline(e.target.value)}
                         className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white appearance-none"
@@ -699,8 +757,9 @@ export default function PresentationDetail() {
                       </select>
                     </div>
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-[#0F172A]">{t.paperTypeLabel || "Paper Type"} <span className="text-slate-400 font-normal text-xs">(optional)</span></label>
+                      <label htmlFor="edit-paper-type" className="block text-sm font-medium text-[#0F172A]">{t.paperTypeLabel || "Paper Type"} <span className="text-slate-600 font-normal text-xs">(optional)</span></label>
                       <select
+                        id="edit-paper-type"
                         value={editPaperType}
                         onChange={(e) => setEditPaperType(e.target.value)}
                         className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white appearance-none"
@@ -713,8 +772,9 @@ export default function PresentationDetail() {
 
                   {/* License */}
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-[#0F172A]">{t.licenseLabel || "License"}</label>
+                    <label htmlFor="edit-license" className="block text-sm font-medium text-[#0F172A]">{t.licenseLabel || "License"}</label>
                     <select
+                      id="edit-license"
                       value={editLicense}
                       onChange={(e) => setEditLicense(e.target.value)}
                       className="w-full px-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white appearance-none"
@@ -747,7 +807,7 @@ export default function PresentationDetail() {
                   {/* Extra Papers */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="block text-sm font-medium text-[#0F172A]">{t.additionalPapers || "Additional Papers"} <span className="text-slate-400 font-normal text-xs">(optional)</span></label>
+                      <label className="block text-sm font-medium text-[#0F172A]">{t.additionalPapers || "Additional Papers"} <span className="text-slate-500 font-normal text-xs">(optional)</span></label>
                       <button type="button" onClick={addEditExtra} className="inline-flex items-center gap-1 text-xs text-[#2563EB] hover:underline font-medium">
                         <Plus className="w-3.5 h-3.5" /> {t.addPaper || "Add paper"}
                       </button>
@@ -764,37 +824,45 @@ export default function PresentationDetail() {
                     ))}
                   </div>
 
-                  {/* Thumbnail */}
+                  {/* Thumbnail — not offered for licences that forbid a preview image */}
+                  {hidesThumbnail(editLicense) ? (
+                  <p className="text-xs text-slate-600 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                    {lang === "de"
+                      ? `Unter der Lizenz ${editLicense} wird kein Vorschaubild angezeigt.`
+                      : `No preview image is shown under the ${editLicense} license.`}
+                  </p>
+                  ) : (
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-[#0F172A]">{t.thumbnailLabel}</label>
-                    <div className={`relative border-2 border-dashed rounded-xl p-5 text-center transition-all ${editThumbnail ? "border-green-300 bg-green-50" : "border-slate-200 hover:border-[#2563EB] hover:bg-blue-50"}`}>
-                      <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => setEditThumbnail(e.target.files[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    <label htmlFor="edit-thumbnail" className="block text-sm font-medium text-[#0F172A]">{t.thumbnailLabel}</label>
+                    <div className={`file-dropzone relative border-2 border-dashed rounded-xl p-5 text-center transition-all ${editThumbnail ? "border-green-300 bg-green-50" : "border-slate-200 hover:border-[#2563EB] hover:bg-blue-50"}`}>
+                      <input id="edit-thumbnail" type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => setEditThumbnail(e.target.files[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                       {editThumbnail ? (
                         <div className="flex items-center justify-center gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <CheckCircle className="w-5 h-5 text-green-700" />
                           <span className="text-sm font-medium text-green-700">{editThumbnail.name}</span>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center gap-2 text-slate-400">
+                        <div className="flex items-center justify-center gap-2 text-slate-500">
                           <Image className="w-5 h-5" />
                           <span className="text-sm">{presentation.thumbnail_url ? (t.replaceThumbnail || "Replace thumbnail") : (t.thumbnailLabel)}</span>
                         </div>
                       )}
                     </div>
                   </div>
+                  )}
 
                   {/* Handout */}
                   <div className="space-y-1.5">
-                    <label className="block text-sm font-medium text-[#0F172A]">{t.handoutLabel}</label>
-                    <div className={`relative border-2 border-dashed rounded-xl p-5 text-center transition-all ${editHandout ? "border-green-300 bg-green-50" : "border-slate-200 hover:border-[#2563EB] hover:bg-blue-50"}`}>
-                      <input type="file" accept=".pdf" onChange={(e) => setEditHandout(e.target.files[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    <label htmlFor="edit-handout" className="block text-sm font-medium text-[#0F172A]">{t.handoutLabel}</label>
+                    <div className={`file-dropzone relative border-2 border-dashed rounded-xl p-5 text-center transition-all ${editHandout ? "border-green-300 bg-green-50" : "border-slate-200 hover:border-[#2563EB] hover:bg-blue-50"}`}>
+                      <input id="edit-handout" type="file" accept=".pdf" onChange={(e) => setEditHandout(e.target.files[0] || null)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                       {editHandout ? (
                         <div className="flex items-center justify-center gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-600" />
+                          <CheckCircle className="w-5 h-5 text-green-700" />
                           <span className="text-sm font-medium text-green-700">{editHandout.name}</span>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-center gap-2 text-slate-400">
+                        <div className="flex items-center justify-center gap-2 text-slate-500">
                           <FileDown className="w-5 h-5" />
                           <span className="text-sm">{presentation.handout_url ? (t.replaceHandout || "Replace handout") : (t.handoutLabel)}</span>
                         </div>
@@ -803,10 +871,11 @@ export default function PresentationDetail() {
                   </div>
 
                   <div className="flex justify-end gap-3">
-                    <button onClick={() => setEditOpen(false)} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                    <button type="button" onClick={() => setEditOpen(false)} className="px-4 py-2 min-h-[44px] text-sm text-slate-700 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
                       {t.cancel}
                     </button>
                     <button
+                      type="button"
                       onClick={handleSaveEdit}
                       disabled={savingEdit}
                       className="inline-flex items-center gap-2 px-5 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
@@ -818,11 +887,13 @@ export default function PresentationDetail() {
                 </div>
               )}
 
-              {editSuccess && (
-                <div className="mt-4 flex items-center gap-2 text-sm text-green-600 font-medium">
-                  <CheckCircle className="w-4 h-4" /> {t.changesSaved || "Changes saved!"}
-                </div>
-              )}
+              <div role="status">
+                {editSuccess && (
+                  <p className="mt-4 flex items-center gap-2 text-sm text-green-700 font-medium">
+                    <CheckCircle className="w-4 h-4" aria-hidden="true" /> {t.changesSaved || "Changes saved!"}
+                  </p>
+                )}
+              </div>
 
 
             </div>
@@ -840,12 +911,14 @@ export default function PresentationDetail() {
                   readonly={!user || submittingRating}
                   size="lg"
                 />
-                {submittingRating && <Loader2 className="w-4 h-4 animate-spin text-[#2563EB]" />}
-                {ratingSuccess && (
-                  <span className="text-sm text-green-600 font-medium odometer-roll">
-                    {t.ratingSaved}
-                  </span>
-                )}
+                {submittingRating && <Loader2 className="w-4 h-4 animate-spin text-[#2563EB]" aria-hidden="true" />}
+                <span role="status">
+                  {ratingSuccess && (
+                    <span className="text-sm text-green-700 font-medium odometer-roll">
+                      {t.ratingSaved}
+                    </span>
+                  )}
+                </span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -855,7 +928,7 @@ export default function PresentationDetail() {
                     {presentation.avg_rating ? presentation.avg_rating.toFixed(1) : "—"}
                   </span>
                 </div>
-                <span className="text-slate-400 text-sm">
+                <span className="text-slate-500 text-sm">
                   {presentation.rating_count || 0} {t.ratingsCount}
                 </span>
               </div>
@@ -870,7 +943,7 @@ export default function PresentationDetail() {
             {/* Comments */}
             <div className="bg-white border border-slate-200 rounded-xl p-6 lg:p-8 shadow-sm">
               <h2 className="font-heading text-xl font-semibold text-[#0F172A] mb-6 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-[#2563EB]" />
+                <MessageSquare className="w-5 h-5 text-[#2563EB]" aria-hidden="true" />
                 {t.discussion} ({comments.length})
               </h2>
 
@@ -878,13 +951,17 @@ export default function PresentationDetail() {
               {user ? (
                 <form onSubmit={handleComment} className="mb-8">
                   <div className="flex gap-3">
-                    <div className="w-9 h-9 rounded-full bg-[#1E293B] flex items-center justify-center flex-shrink-0 mt-1">
+                    <div className="w-9 h-9 rounded-full bg-[#1E293B] flex items-center justify-center flex-shrink-0 mt-1" aria-hidden="true">
                       <span className="text-white text-sm font-bold">
                         {(user.full_name || user.email || "U")[0].toUpperCase()}
                       </span>
                     </div>
                     <div className="flex-1">
+                      <label htmlFor="new-comment" className="sr-only">{lang === "de" ? "Kommentar schreiben" : "Write a comment"}</label>
                       <textarea
+                        id="new-comment"
+                        aria-describedby="new-comment-count"
+                        maxLength={1000}
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value.slice(0, 1000))}
                         placeholder={t.commentPlaceholder}
@@ -892,16 +969,16 @@ export default function PresentationDetail() {
                         className="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:bg-white resize-none transition-all text-[#0F172A]"
                       />
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-slate-400">{newComment.length}/1000</span>
+                        <span id="new-comment-count" className="text-xs text-slate-600">{newComment.length}/1000 {lang === "de" ? "Zeichen" : "characters"}</span>
                         <button
                           type="submit"
                           disabled={!newComment.trim() || submittingComment}
                           className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
                         >
                           {submittingComment ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                           ) : (
-                            <Send className="w-4 h-4" />
+                            <Send className="w-4 h-4" aria-hidden="true" />
                           )}
                           {t.comment}
                         </button>
@@ -918,7 +995,7 @@ export default function PresentationDetail() {
               {/* Comment List */}
               <div className="space-y-5">
                 {comments.length === 0 ? (
-                  <p className="text-slate-400 text-sm text-center py-8">
+                  <p className="text-slate-500 text-sm text-center py-8">
                     {t.noComments}
                   </p>
                 ) : (
@@ -933,9 +1010,9 @@ export default function PresentationDetail() {
                             {c.user_name || t.anonymous}
                           </span>
                           {c.user_university && (
-                            <span className="text-xs text-slate-400">{c.user_university}</span>
+                            <span className="text-xs text-slate-500">{c.user_university}</span>
                           )}
-                          <span className="text-xs text-slate-400 ml-auto">
+                          <span className="text-xs text-slate-500 ml-auto">
                             {formatDate(c.created_date)}
                           </span>
                         </div>
@@ -962,7 +1039,7 @@ export default function PresentationDetail() {
                 <div className="space-y-4">
                   {/* DOI */}
                   <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                       {t.doiSource}
                     </label>
                     <DoiLink doi={presentation.doi} />
@@ -977,7 +1054,7 @@ export default function PresentationDetail() {
                   {/* Paper Title */}
                   {presentation.paper_title && (
                     <div>
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                         {t.originalPaper}
                       </label>
                       <p className="text-sm text-[#0F172A] leading-snug font-medium">
@@ -989,7 +1066,7 @@ export default function PresentationDetail() {
                   {/* Paper Authors */}
                   {paperAuthors && paperAuthors.length > 0 && (
                     <div>
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                         {lang === "de" ? "Autoren des Papers" : "Paper Authors"}
                       </label>
                       <div className={`text-sm text-[#0F172A] leading-relaxed ${!authorsExpanded ? "line-clamp-1" : ""}`}>
@@ -1011,7 +1088,7 @@ export default function PresentationDetail() {
 
                   {/* Discipline */}
                   <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                       {t.disciplineLabel}
                     </label>
                     <span className="text-sm text-[#0F172A]">{lang === "de" ? (disciplineLabelDE[presentation.discipline] || presentation.discipline) : presentation.discipline}</span>
@@ -1019,7 +1096,7 @@ export default function PresentationDetail() {
 
                   {/* Published */}
                   <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                       {lang === "de" ? "Veröffentlicht" : "Published"}
                     </label>
                     <span className="text-sm text-[#0F172A]">{formatDate(presentation.created_date)}</span>
@@ -1027,7 +1104,7 @@ export default function PresentationDetail() {
 
                   {/* Language (detected from title) */}
                   <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                       {lang === "de" ? "Sprache" : "Language"}
                     </label>
                     <span className="text-sm text-[#0F172A]">
@@ -1043,7 +1120,7 @@ export default function PresentationDetail() {
 
                   {/* Uploader / Author */}
                   <div>
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                       {lang === "de" ? "Hochgeladen von" : "Uploaded by"}
                     </label>
                     <div className="flex flex-col gap-0.5">
@@ -1052,7 +1129,7 @@ export default function PresentationDetail() {
                         <span className="text-xs text-slate-500">{presentation.uploader_university}</span>
                       )}
                       {presentation.authorship_verified && (
-                        <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium mt-0.5">
+                        <span className="inline-flex items-center gap-1 text-xs text-green-700 font-medium mt-0.5">
                           <CheckCircle className="w-3 h-3" />
                           {lang === "de" ? "Autor verifiziert" : "Author verified"}
                         </span>
@@ -1062,7 +1139,7 @@ export default function PresentationDetail() {
 
                   {/* License */}
                   <div id="license">
-                    <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                       {lang === "de" ? "Lizenz der Präsentation" : "Presentation License"}
                     </label>
                     {isOwner ? (
@@ -1080,7 +1157,7 @@ export default function PresentationDetail() {
                           uploadDate={presentation.created_date}
                         />
                       ) : (
-                        <span className="text-xs text-slate-400 italic">{lang === "de" ? "Keine Lizenz angegeben" : "No license specified"}</span>
+                        <span className="text-xs text-slate-500 italic">{lang === "de" ? "Keine Lizenz angegeben" : "No license specified"}</span>
                       )
                     )}
                   </div>
@@ -1088,7 +1165,7 @@ export default function PresentationDetail() {
                   {/* Paper Type */}
                   {presentation.paper_type && (
                     <div>
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                         {t.paperTypeLabel || "Paper Type"}
                       </label>
                       <span className="text-xs font-medium px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">{presentation.paper_type}</span>
@@ -1098,7 +1175,7 @@ export default function PresentationDetail() {
                   {/* Extra Papers */}
                   {presentation.extra_papers && presentation.extra_papers.length > 0 && (
                     <div>
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                         {t.additionalPapers || "Additional Papers"}
                       </label>
                       <div className="space-y-2">
@@ -1115,7 +1192,7 @@ export default function PresentationDetail() {
                   {/* Video */}
                   {presentation.video_url && (
                     <div>
-                      <label className="text-xs font-medium text-slate-400 uppercase tracking-wider block mb-1.5">
+                      <label className="text-xs font-medium text-slate-500 uppercase tracking-wider block mb-1.5">
                         {t.videoPresentation}
                       </label>
                       <a
@@ -1141,25 +1218,25 @@ export default function PresentationDetail() {
                     <p className="text-2xl font-bold text-white tabular-nums">
                       {presentation.downloads || 0}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{t.downloads}</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{t.downloads}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-white tabular-nums">
                       {presentation.avg_rating ? presentation.avg_rating.toFixed(1) : "—"}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{t.avgRating}</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{t.avgRating}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-white tabular-nums">
                       {presentation.rating_count || 0}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{t.ratingsCount}</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{t.ratingsCount}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-2xl font-bold text-white tabular-nums">
                       {comments.length}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">{t.commentsCount}</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{t.commentsCount}</p>
                   </div>
                 </div>
               </div>
