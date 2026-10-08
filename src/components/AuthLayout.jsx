@@ -3,12 +3,17 @@ import { Link } from "react-router-dom";
 import { BookOpen } from "lucide-react";
 import Footer from "./Footer";
 import SkipLink from "./a11y/SkipLink";
+import { AlexandriaBackdrop } from "./AlexandriaScene";
 import { useLang } from "@/lib/LanguageContext";
 
 export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
   const { lang } = useLang();
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col ph-parchment">
+      {/* The reading room stands back behind the form: the wash is heaviest
+          in the middle, where the heading and the card sit, and opens up
+          towards the edges. */}
+      <AlexandriaBackdrop variant="room" />
       <SkipLink />
       <div className="flex-1 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">

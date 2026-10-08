@@ -192,3 +192,195 @@ li a:not([class*="bg-"]) {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* --- Alexandria scenery (browse page) ------------------------------------
+   Ornament only. Both pieces sit behind the content and are aria-hidden in
+   the markup, so they add nothing to the reading order. Colours are kept
+   dark enough behind text that the AA contrast ratios still hold. */
+
+.ph-banner {
+  position: relative;
+  isolation: isolate;
+  background: #0A111B;
+  overflow: hidden;
+}
+
+.ph-banner__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+  object-fit: cover;
+  /* Hold the horizon and the arch in frame as the banner gets shorter; the
+     foreground tables at the bottom are the least interesting part to keep. */
+  object-position: center 38%;
+}
+
+/* The headline spans the full width now, so the wash is even rather than
+   weighted to one side: a radial that keeps the centre readable while the
+   corners stay open enough to show the colonnade and the beacon. */
+.ph-banner__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  /* A vignette, not a blanket: light over the middle so the arch and the sun
+     stay legible as a picture, darker towards the edges where the shelves
+     already are. The text does not get its contrast from here — it gets it
+     from the band below. */
+  background:
+    radial-gradient(ellipse 120% 95% at 50% 45%, rgba(6, 11, 19, 0.16) 0%, rgba(6, 11, 19, 0.38) 70%, rgba(6, 11, 19, 0.62) 100%),
+    linear-gradient(to bottom, rgba(6, 11, 19, 0.45) 0%, rgba(6, 11, 19, 0.10) 30%, rgba(6, 11, 19, 0.16) 70%, rgba(6, 11, 19, 0.55) 100%);
+}
+
+/* The inscription band. A frieze running the full width of the banner: it is
+   what guarantees the text contrast, so the picture behind it can stay bright.
+   Raise its alpha, not the scrim's, if the type ever needs more room. */
+.ph-banner__plate {
+  background: rgba(6, 11, 19, 0.66);
+  border-top: 1px solid rgba(199, 154, 82, 0.34);
+  border-bottom: 1px solid rgba(199, 154, 82, 0.34);
+}
+
+/* Blur is a bonus where it exists — the alpha above already carries the
+   contrast on its own, so nothing depends on support for this. */
+@supports (backdrop-filter: blur(2px)) {
+  .ph-banner__plate {
+    backdrop-filter: blur(2px);
+  }
+}
+
+.ph-banner__content {
+  position: relative;
+  z-index: 2;
+}
+
+/* A hairline of gold leaf closes the banner against the filter bar. */
+.ph-banner::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  z-index: 3;
+  background: linear-gradient(to right, rgba(199, 154, 82, 0.15), rgba(199, 154, 82, 0.7), rgba(199, 154, 82, 0.15));
+}
+
+/* The hall behind the results. Fixed to the viewport, so scrolling the list
+   reads as moving through the room rather than dragging a picture along.
+   The banner's own background paints over it, so nothing covers the hero. */
+.ph-backdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  /* Behind its siblings but still inside the parchment's stacking context,
+     so it never slips behind the page background — and so the children keep
+     whatever position they declare. The sticky filter bar is one of them. */
+  z-index: -1;
+
+  /* Two layers: a parchment wash over the photograph. The wash is what keeps
+     the cards readable — the picture is busy and bright, and card text has to
+     win against whatever happens to sit behind it. Tune the wash, not the
+     image, when the room should come forward or recede. */
+  background-image:
+    linear-gradient(
+      to bottom,
+      rgba(251, 247, 239, 0.90) 0%,
+      rgba(251, 247, 239, 0.82) 38%,
+      rgba(251, 247, 239, 0.88) 100%
+    ),
+    url("/alexandria-hall.webp");
+  background-repeat: no-repeat, no-repeat;
+  background-position: center center, center center;
+  background-size: cover, cover;
+}
+
+/* Warm the page ground from near-white to parchment, and let the wall fade
+   out towards the top so the banner edge stays clean. */
+.ph-parchment {
+  background-color: #FBF7EF;
+  isolation: isolate;
+}
+
+/* A tall phone viewport crops a 16:9 picture hard, so pull back to the part
+   of the hall that still reads at that aspect — the colonnade and the sea. */
+@media (max-width: 640px) {
+  .ph-backdrop {
+    background-position: center center, 32% center;
+  }
+}
+
+/* --- Title slide (landing page) ------------------------------------------
+   One screen, no scrollbar. svh rather than vh so the mobile URL bar does not
+   push the footer out of view. */
+.ph-slide {
+  height: 100svh;
+  overflow: hidden;
+}
+
+/* Below this the three rows genuinely do not fit, and clipping them would put
+   the legal links and the sign-in link out of reach. Hand scrolling back. */
+@media (max-height: 640px) {
+  .ph-slide {
+    height: auto;
+    min-height: 100svh;
+    overflow: visible;
+  }
+}
+
+/* The slide has no inscription band behind its title, so the wash over the
+   picture has to carry the text contrast on its own — heavier than the
+   browse banner, where the band does that job. */
+.ph-banner--slide .ph-banner__scrim {
+  background:
+    radial-gradient(ellipse 95% 85% at 50% 48%, rgba(6, 11, 19, 0.74) 0%, rgba(6, 11, 19, 0.66) 55%, rgba(6, 11, 19, 0.58) 100%),
+    linear-gradient(to bottom, rgba(6, 11, 19, 0.52) 0%, rgba(6, 11, 19, 0.28) 35%, rgba(6, 11, 19, 0.50) 100%);
+}
+
+/* --- Slim banner (browse page) -------------------------------------------
+   A strip above the list rather than a hero. There is no inscription band at
+   this height — it would cover the whole picture — so the wash alone carries
+   the text contrast and is correspondingly heavier. */
+.ph-banner--slim .ph-banner__scrim {
+  background:
+    radial-gradient(ellipse 110% 160% at 50% 50%, rgba(6, 11, 19, 0.74) 0%, rgba(6, 11, 19, 0.68) 60%, rgba(6, 11, 19, 0.62) 100%),
+    linear-gradient(to bottom, rgba(6, 11, 19, 0.42) 0%, rgba(6, 11, 19, 0.24) 50%, rgba(6, 11, 19, 0.46) 100%);
+}
+
+/* A strip this short only shows a narrow slice of the picture, so aim it at
+   the arch and the horizon rather than the foreground tables. */
+.ph-banner--slim .ph-banner__art {
+  object-position: center 44%;
+}
+
+/* --- Book-shelf banner (upload page) -------------------------------------
+   Crop hard onto the spines: the picture has a stretch of dark wall above the
+   books, and in a banner this short that would read as wasted space. */
+.ph-banner--books .ph-banner__art {
+  object-position: center 30%;
+}
+
+/* The shelf is already dark, so the wash only has to even out the gilding and
+   keep the left-hand text column clear of the brightest spines. */
+.ph-banner--books .ph-banner__scrim {
+  background:
+    linear-gradient(to right, rgba(8, 10, 14, 0.84) 0%, rgba(8, 10, 14, 0.78) 45%, rgba(8, 10, 14, 0.66) 100%),
+    linear-gradient(to bottom, rgba(8, 10, 14, 0.30) 0%, rgba(8, 10, 14, 0.12) 55%, rgba(8, 10, 14, 0.34) 100%);
+}
+
+/* --- Reading room (sign-in, register, password pages) --------------------
+   Same picture, washed radially instead of flat: heaviest in the middle,
+   where the heading sits directly on the background with no card under it,
+   and thinner at the edges so the room is actually visible. */
+.ph-backdrop--room {
+  background-image:
+    radial-gradient(
+      ellipse 62% 60% at 50% 44%,
+      rgba(251, 247, 239, 0.94) 0%,
+      rgba(251, 247, 239, 0.91) 50%,
+      rgba(251, 247, 239, 0.48) 100%
+    ),
+    url("/alexandria-reception.webp");
+}

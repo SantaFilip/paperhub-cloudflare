@@ -8,6 +8,7 @@ import { ExternalLink, Play, ArrowLeft, Loader2,
   MessageSquare, User, Calendar, Tag, BookOpen, Send,
   Pencil, X, CheckCircle, Image, FileDown, Plus, Trash2, Archive, AlertCircle, Link2, Flag, Sparkles
 } from "lucide-react";
+import { AlexandriaBackdrop } from "@/components/AlexandriaScene";
 import LicenseBadge from "@/components/LicenseBadge";
 import LicenseInfoPanel from "@/components/LicenseInfoPanel";
 import SidebarLicenseEditor from "@/components/SidebarLicenseEditor";
@@ -419,7 +420,9 @@ export default function PresentationDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      // Same ground as the loaded page, so it does not flash white first.
+      <div className="flex items-center justify-center min-h-screen ph-parchment">
+        <AlexandriaBackdrop />
         <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" aria-hidden="true" /><span role="status" className="sr-only">{lang === "de" ? "Wird geladen…" : "Loading…"}</span>
       </div>
     );
@@ -427,7 +430,8 @@ export default function PresentationDetail() {
 
   if (!presentation) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
+      <div className="flex flex-col items-center justify-center min-h-screen text-center px-4 ph-parchment">
+        <AlexandriaBackdrop />
         <BookOpen className="w-12 h-12 text-slate-500 mb-4" />
         <h2 className="font-heading text-2xl text-[#0F172A] mb-2">{t.notFound}</h2>
         <Link to="/browse" className="text-[#2563EB] hover:underline">{t.backToBrowse}</Link>
@@ -456,7 +460,8 @@ export default function PresentationDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD]">
+    <div className="min-h-screen ph-parchment">
+      <AlexandriaBackdrop />
       <JsonLd data={jsonLd} />
       <MetaRobots license={presentation.license} />
       {/* Consent Modal */}

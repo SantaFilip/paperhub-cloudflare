@@ -4,6 +4,7 @@ import { api } from "@/api/client";
 import PresentationCard from "@/components/PresentationCard";
 import { useLang, disciplineLabelDE, paperTypeLabelDE } from "@/lib/LanguageContext";
 import { Search, ChevronDown, Loader2, BookOpen } from "lucide-react";
+import { AlexandriaBanner, AlexandriaBackdrop } from "@/components/AlexandriaScene";
 
 const DISCIPLINES = [
   "Machine Learning", "Computer Science", "Physics", "Chemistry",
@@ -66,23 +67,29 @@ export default function Browse() {
     });
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD]">
+    <div className="min-h-screen ph-parchment">
+      <AlexandriaBackdrop />
+
       {/* Hero Banner */}
-      <div className="bg-[#1E293B] text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <div className="max-w-2xl">
-            <p className="text-blue-300 text-sm font-medium tracking-widest uppercase mb-3">
-              {t.browseSubtitle}
-            </p>
-            <h1 className="font-heading text-3xl lg:text-4xl font-semibold leading-tight mb-4">
-              {t.browseHeading}
-            </h1>
-            <p className="text-slate-300 text-base leading-relaxed">
-              {t.browseDesc}
-            </p>
-          </div>
+      {/* A slim strip, not a hero: the list below is what the page is for.
+          No inscription band here — at this height it would cover the picture
+          entirely, so `.ph-banner--slim` carries the contrast in the wash. */}
+      <AlexandriaBanner className="ph-banner--slim">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-7 lg:py-9 text-center">
+          <p className="text-[#F0DFB4] text-[10px] sm:text-xs font-medium tracking-[0.2em] uppercase mb-2">
+            {t.browseSubtitle}
+          </p>
+          <h1 className="font-heading text-white text-xl sm:text-2xl lg:text-3xl font-semibold leading-tight text-balance">
+            {t.browseHeading}
+          </h1>
+          {/* Explicit hex, not text-slate-300: the Tailwind config flattens
+              the whole slate palette to one value, so numbered slate
+              utilities generate no CSS at all. */}
+          <p className="text-[#E2DDD0] text-sm lg:text-base leading-relaxed mx-auto max-w-2xl mt-2">
+            {t.browseDesc}
+          </p>
         </div>
-      </div>
+      </AlexandriaBanner>
 
       {/* Filter Bar */}
       <div className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">

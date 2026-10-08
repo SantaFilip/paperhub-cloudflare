@@ -6,6 +6,7 @@ import { Upload as UploadIcon, FileText, Link2, Tag, BookOpen, Video, CheckCircl
 import AuthorshipVerifier from "@/components/AuthorshipVerifier";
 import ReferenceLicenseScanner from "@/components/ReferenceLicenseScanner";
 import { getUploadMode, hasNDRestriction, getPaperLicenseMinIndex, hidesThumbnail, LICENSE_VALUES } from "@/lib/licenseUtils";
+import { AlexandriaBackdrop, AlexandriaBooks } from "@/components/AlexandriaScene";
 
 const DOI_REGEX = /^10\.\d{4,}\/.+/;
 const DOI_REGEX_CHECK = DOI_REGEX;
@@ -415,7 +416,8 @@ export default function Upload() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center min-h-screen" role="status">
+    <div className="flex items-center justify-center min-h-screen ph-parchment" role="status">
+      <AlexandriaBackdrop />
       <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" aria-hidden="true" />
       <span className="sr-only">{lang === "de" ? "Wird geladen…" : "Loading…"}</span>
     </div>
@@ -424,7 +426,8 @@ export default function Upload() {
 
 
   if (success) return (
-    <div className="min-h-screen bg-[#FDFDFD] flex items-center justify-center px-4">
+    <div className="min-h-screen ph-parchment flex items-center justify-center px-4">
+      <AlexandriaBackdrop />
       <div className="text-center max-w-md">
         <div className="w-20 h-20 rounded-full bg-green-50 border-2 border-green-200 flex items-center justify-center mx-auto mb-6">
           <CheckCircle className="w-10 h-10 text-green-700" />
@@ -445,14 +448,18 @@ export default function Upload() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD]">
-      <div className="bg-[#1E293B] text-white">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <p className="text-blue-300 text-xs font-medium tracking-widest uppercase mb-3">{t.submissionPortal}</p>
-          <h1 className="font-heading text-2xl lg:text-3xl font-semibold mb-2">{t.uploadHeading}</h1>
-          <p className="text-slate-300 text-sm">{t.uploadDesc}</p>
+    <div className="min-h-screen ph-parchment">
+      <AlexandriaBackdrop />
+      <AlexandriaBooks>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-9 lg:py-11">
+          <p className="text-[#F0DFB4] text-xs font-medium tracking-[0.2em] uppercase mb-3">{t.submissionPortal}</p>
+          <h1 className="font-heading text-white text-2xl lg:text-3xl font-semibold mb-2">{t.uploadHeading}</h1>
+          {/* Explicit hex, not text-slate-300: the Tailwind config flattens
+              the whole slate palette to one value, so numbered slate
+              utilities generate no CSS at all. */}
+          <p className="text-[#E2DDD0] text-sm">{t.uploadDesc}</p>
         </div>
-      </div>
+      </AlexandriaBooks>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <form onSubmit={handleSubmit} noValidate className="space-y-8">
