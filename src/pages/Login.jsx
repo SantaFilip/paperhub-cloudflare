@@ -4,7 +4,7 @@ import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import { useLang } from "@/lib/LanguageContext";
 
@@ -31,13 +31,15 @@ export default function Login() {
 
   return (
     <AuthLayout
-      icon={LogIn}
       title={lang === "de" ? "Willkommen zurück" : "Welcome back"}
       subtitle={lang === "de" ? "Melde dich bei deinem Konto an" : "Log in to your account"}
       footer={
-        <Link to="/register" className="block w-full bg-[#1E293B] text-white text-center font-medium py-3 rounded-lg hover:bg-slate-700 transition-colors">
-          {lang === "de" ? "Noch kein Konto? Jetzt registrieren" : "Don't have an account? Create one"}
-        </Link>
+        <p className="text-center text-sm text-foreground">
+          {lang === "de" ? "Noch kein Konto?" : "Don't have an account?"}{" "}
+          <Link to="/register" className="text-[#1D4ED8] font-medium underline underline-offset-2">
+            {lang === "de" ? "Jetzt registrieren" : "Create one"}
+          </Link>
+        </p>
       }
     >
       {error && (

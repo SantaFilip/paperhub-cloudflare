@@ -17,7 +17,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
       <SkipLink />
       <div className="flex-1 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
-        <header className="flex justify-center mb-8">
+        <header className="flex justify-center mb-6">
           <Link to="/landing" className="flex items-center gap-2 group" aria-label={lang === "de" ? "PaperHub – zur Startseite" : "PaperHub – home"}>
             <div className="w-8 h-8 bg-[#1E293B] rounded flex items-center justify-center" aria-hidden="true">
               <BookOpen className="w-4 h-4 text-white" />
@@ -28,10 +28,13 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           </Link>
         </header>
         <main id="main-content" tabIndex={-1} className="focus:outline-none">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4">
-            <Icon className="w-7 h-7 text-primary-foreground" aria-hidden="true" />
-          </div>
+        <div className="text-center mb-8">
+          {/* Pages that want to lead with the headline alone pass no icon. */}
+          {Icon && (
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4">
+              <Icon className="w-7 h-7 text-primary-foreground" aria-hidden="true" />
+            </div>
+          )}
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
         </div>
