@@ -105,13 +105,7 @@ export function getLicenseUrl(license) {
  * uploads made before this rule existed, because the worker strips the
  * thumbnail when the record is read, not when it is written.
  */
-export const THUMBNAIL_HIDDEN_LICENSES = [
-  "All Rights Reserved",
-  "CC BY-NC 4.0",
-  "CC BY-NC-SA 4.0",
-  "CC BY-ND 4.0",
-  "CC BY-NC-ND 4.0",
-];
+export const THUMBNAIL_HIDDEN_LICENSES = ["All Rights Reserved", "CC BY-NC-ND 4.0", "CC BY-NC 4.0"];
 
 export function hidesThumbnail(license) {
   return THUMBNAIL_HIDDEN_LICENSES.includes(license);

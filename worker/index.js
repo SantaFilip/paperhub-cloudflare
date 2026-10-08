@@ -84,9 +84,6 @@ async function serveFile(key, env, request) {
 
   const headers = new Headers();
   object.writeHttpMetadata(headers);
-  // Images can be thumbnails whose licence may later forbid a preview, so they
-  // must not sit in browser caches for a year like the immutable uploads do.
-  if (/\.(png|jpe?g|webp|gif)$/i.test(key)) headers.set("cache-control", "public, max-age=300, must-revalidate");
   headers.set("etag", object.httpEtag);
   if (request.headers.get("if-none-match") === object.httpEtag) {
     return new Response(null, { status: 304, headers });
