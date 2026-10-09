@@ -6,7 +6,10 @@ import SkipLink from "./a11y/SkipLink";
 import { AlexandriaBackdrop } from "./AlexandriaScene";
 import { useLang } from "@/lib/LanguageContext";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+// `wide` gives the card room for a two-column form. Registration needs it:
+// four fields and two consent boxes do not fit a phone-width column on a
+// laptop screen without scrolling.
+export default function AuthLayout({ icon: Icon, title, subtitle, footer, wide = false, children }) {
   const { lang } = useLang();
   return (
     <div className="min-h-screen flex flex-col ph-parchment">
@@ -15,8 +18,8 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           towards the edges. */}
       <AlexandriaBackdrop variant="room" />
       <SkipLink />
-      <div className="flex-1 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center px-4 py-6">
+      <div className={`w-full ${wide ? "max-w-2xl" : "max-w-md"}`}>
         <header className="flex justify-center mb-6">
           <Link to="/landing" className="flex items-center gap-2 group" aria-label={lang === "de" ? "PaperHub – zur Startseite" : "PaperHub – home"}>
             <div className="w-8 h-8 bg-[#1E293B] rounded flex items-center justify-center" aria-hidden="true">
@@ -28,7 +31,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           </Link>
         </header>
         <main id="main-content" tabIndex={-1} className="focus:outline-none">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           {/* Pages that want to lead with the headline alone pass no icon. */}
           {Icon && (
             <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary mb-4">
@@ -38,11 +41,11 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer, childr
           <h1 className="text-3xl font-bold tracking-tight text-foreground">{title}</h1>
           {subtitle && <p className="text-muted-foreground mt-2">{subtitle}</p>}
         </div>
-        <div className="bg-card rounded-2xl shadow-sm border border-border p-8">
+        <div className="bg-card rounded-2xl shadow-sm border border-border p-6 sm:p-7">
           {children}
         </div>
         {footer && (
-          <div className="mt-6">{footer}</div>
+          <div className="mt-5">{footer}</div>
         )}
         </main>
       </div>

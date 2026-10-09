@@ -4,7 +4,7 @@ import { api } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2, User } from "lucide-react";
+import { Mail, Lock, Loader2, User } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import { useLang } from "@/lib/LanguageContext";
@@ -136,13 +136,16 @@ export default function Register() {
 
   return (
     <AuthLayout
-      icon={UserPlus}
+      wide
       title={lang === "de" ? "Konto erstellen" : "Create your account"}
       subtitle={lang === "de" ? "Registriere dich, um loszulegen" : "Sign up to get started"}
       footer={
-        <Link to="/login" className="block w-full bg-[#1E293B] text-white text-center font-medium py-3 rounded-lg hover:bg-slate-700 transition-colors">
-          {lang === "de" ? "Schon ein Konto? Anmelden" : "Already have an account? Log in"}
-        </Link>
+        <p className="text-center text-sm text-foreground">
+          {lang === "de" ? "Schon ein Konto?" : "Already have an account?"}{" "}
+          <Link to="/login" className="text-[#1D4ED8] font-medium underline underline-offset-2">
+            {lang === "de" ? "Anmelden" : "Log in"}
+          </Link>
+        </p>
       }
     >
       {error && (
@@ -152,7 +155,10 @@ export default function Register() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
+        {/* Two columns from the small breakpoint up, so the form fits a
+            laptop screen without scrolling. One column on phones. */}
+        <div className="grid sm:grid-cols-2 gap-x-5 gap-y-3 items-start">
+        <div className="space-y-1.5">
           <Label htmlFor="fullname">{lang === "de" ? "Vollständiger Name" : "Full name"}</Label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -175,7 +181,7 @@ export default function Register() {
               : "Your real name is used as your public username, e.g. /u/Filip_Sudermann."}
           </p>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="email">{lang === "de" ? "E-Mail" : "Email"}</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -191,7 +197,7 @@ export default function Register() {
             />
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="password">{lang === "de" ? "Passwort" : "Password"}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -207,7 +213,7 @@ export default function Register() {
             />
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <Label htmlFor="confirm">{lang === "de" ? "Passwort wiederholen" : "Confirm password"}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -223,7 +229,8 @@ export default function Register() {
             />
           </div>
         </div>
-        <div className="space-y-3 pt-2">
+        </div>
+        <div className="grid sm:grid-cols-2 gap-x-5 gap-y-2">
           <label className="flex items-start gap-2 cursor-pointer">
             <input type="checkbox" checked={consentPrivacy} onChange={(e) => setConsentPrivacy(e.target.checked)} className="mt-0.5 w-5 h-5 rounded border-slate-400 text-[#2563EB] focus:ring-[#2563EB] flex-shrink-0" />
             <span className="text-xs text-slate-700">
