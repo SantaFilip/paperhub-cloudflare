@@ -1,3 +1,4 @@
+import { AlexandriaBanner, AlexandriaBackdrop } from "@/components/AlexandriaScene";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
@@ -102,28 +103,33 @@ export default function PublicProfile() {
     : (lang === "de" ? "Studierende:r" : "Student");
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD]">
-      <div className="bg-[#1E293B] text-white">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
+    <div className="min-h-screen ph-parchment">
+      <AlexandriaBackdrop />
+      <AlexandriaBanner className="ph-banner--stele" src="/alexandria-hall.webp">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-9 lg:py-12">
+         <div className="ph-stele px-5 sm:px-8 py-7 lg:py-9">
+          <p className="text-[#F0DFB4] text-[10px] sm:text-xs font-medium tracking-[0.22em] uppercase mb-5">
+            {lang === "de" ? "Verzeichnis der Gelehrten" : "Register of Scholars"}
+          </p>
           <div className="flex items-start gap-5">
-            <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-[#2563EB] flex items-center justify-center flex-shrink-0 text-2xl lg:text-3xl font-bold font-heading">
+            <div className="ph-medallion w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center flex-shrink-0 text-2xl lg:text-3xl font-bold font-heading">
               {initial}
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="font-heading text-2xl lg:text-3xl font-semibold mb-1 break-words">{data.name}</h1>
+              <h1 className="font-heading text-white text-2xl lg:text-3xl font-semibold mb-1 break-words">{data.name}</h1>
               <div className="flex items-center gap-2 flex-wrap">
                 {data.university && (
-                  <span className="text-slate-300 text-sm flex items-center gap-1.5">
+                  <span className="text-[#E2DDD0] text-sm flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4" /> {data.university}
                   </span>
                 )}
                 {data.role && (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-blue-600/30 text-blue-300 font-medium">
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-[#2E3A4F]/60 text-[#CFD8E6] border border-[#C79A52]/25 font-medium">
                     {roleLabel}
                   </span>
                 )}
                 {data.orcid_id && (
-                  <a href={`https://orcid.org/${data.orcid_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-green-400 hover:text-green-300 font-mono">
+                  <a href={`https://orcid.org/${data.orcid_id}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-[#A8D5BA] hover:text-[#C6E6D2] font-mono">
                     <CheckCircle className="w-3 h-3" /> ORCID: {data.orcid_id}
                   </a>
                 )}
@@ -132,18 +138,19 @@ export default function PublicProfile() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mt-8 pt-8 border-t border-white/10">
-            <div className="text-center">
+          <div className="ph-register grid grid-cols-2 mt-8 pt-7 border-t border-[#C79A52]/30">
+            <div className="text-center px-1.5 sm:px-3">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">{data.stats.count}</p>
-              <p className="text-xs text-slate-300 mt-0.5">{lang === "de" ? "Veröffentlichungen" : "Publications"}</p>
+              <p className="text-[10px] sm:text-[11px] text-[#E2DDD0] mt-1 uppercase tracking-[0.06em] sm:tracking-[0.14em] leading-tight">{lang === "de" ? "Veröffentlichungen" : "Publications"}</p>
             </div>
-            <div className="text-center">
+            <div className="text-center px-1.5 sm:px-3">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">{data.stats.totalDownloads}</p>
-              <p className="text-xs text-slate-300 mt-0.5">{lang === "de" ? "Downloads" : "Downloads"}</p>
+              <p className="text-[10px] sm:text-[11px] text-[#E2DDD0] mt-1 uppercase tracking-[0.06em] sm:tracking-[0.14em] leading-tight">{lang === "de" ? "Downloads" : "Downloads"}</p>
             </div>
           </div>
+         </div>
         </div>
-      </div>
+      </AlexandriaBanner>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-6">
         <div className="flex items-center justify-between">

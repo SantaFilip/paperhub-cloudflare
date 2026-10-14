@@ -384,3 +384,54 @@ li a:not([class*="bg-"]) {
     ),
     url("/alexandria-reception.webp");
 }
+
+/* --- Scholar's stele (profile header) ------------------------------------
+   A profile is one person's record. In this library that is a dedication cut
+   into marble, so the header is framed as an inscribed tablet: a hairline of
+   gold leaf with a second, fainter rule set outside it. No other page carries
+   this frame — it is what makes the profile the profile. */
+.ph-banner--stele .ph-banner__art {
+  object-position: center 42%;
+}
+
+.ph-banner--stele .ph-banner__scrim {
+  background:
+    radial-gradient(ellipse 100% 120% at 50% 50%, rgba(6, 11, 19, 0.80) 0%, rgba(6, 11, 19, 0.74) 55%, rgba(6, 11, 19, 0.66) 100%),
+    linear-gradient(to bottom, rgba(6, 11, 19, 0.44) 0%, rgba(6, 11, 19, 0.26) 45%, rgba(6, 11, 19, 0.50) 100%);
+}
+
+.ph-stele {
+  position: relative;
+  border: 1px solid rgba(199, 154, 82, 0.42);
+  border-radius: 2px;
+  /* The second rule: an outline sitting a few pixels further out, which is how
+     a cut frame reads, and which no border alone can do. */
+  outline: 1px solid rgba(199, 154, 82, 0.18);
+  outline-offset: 6px;
+}
+
+/* The initial, struck as a medallion rather than printed in a flat disc. */
+.ph-medallion {
+  background: radial-gradient(circle at 34% 28%, #F7F0DE 0%, #E4D5B6 62%, #C9AE7E 100%);
+  color: #2A2014;
+  box-shadow:
+    0 0 0 1px rgba(199, 154, 82, 0.95),
+    0 0 0 5px rgba(6, 11, 19, 0.45),
+    0 0 0 6px rgba(199, 154, 82, 0.32);
+}
+
+/* The three figures read as one carved register, divided rather than boxed. */
+.ph-register > * + * {
+  border-left: 1px solid rgba(199, 154, 82, 0.26);
+}
+
+/* Section titles in the body pick up the same gold, so the page below the
+   stele belongs to it. */
+.ph-rule::before {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 1px;
+  margin-bottom: 0.6rem;
+  background: linear-gradient(to right, #C79A52, rgba(199, 154, 82, 0));
+}

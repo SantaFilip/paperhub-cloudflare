@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { AlexandriaBanner, AlexandriaBackdrop } from "@/components/AlexandriaScene";
 import { api } from "@/api/client";
 import { Link, useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -226,27 +227,33 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD]">
-      {/* Scholar Header */}
-      <div className="bg-[#1E293B] text-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-14">
+    <div className="min-h-screen ph-parchment">
+      <AlexandriaBackdrop />
+
+      {/* Scholar Header — the stele */}
+      <AlexandriaBanner className="ph-banner--stele" src="/alexandria-hall.webp">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-9 lg:py-12">
+         <div className="ph-stele px-5 sm:px-8 py-7 lg:py-9">
+          <p className="text-[#F0DFB4] text-[10px] sm:text-xs font-medium tracking-[0.22em] uppercase mb-5">
+            {lang === "de" ? "Verzeichnis der Gelehrten" : "Register of Scholars"}
+          </p>
           <div className="flex flex-col lg:flex-row lg:items-end gap-6">
             {/* Avatar & Info */}
             <div className="flex items-start gap-5 flex-1">
-              <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-full bg-[#2563EB] flex items-center justify-center flex-shrink-0 text-2xl lg:text-3xl font-bold font-heading">
+              <div className="ph-medallion w-16 h-16 lg:w-20 lg:h-20 rounded-full flex items-center justify-center flex-shrink-0 text-2xl lg:text-3xl font-bold font-heading">
                 {(user?.full_name || user?.email || "U")[0].toUpperCase()}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 flex-wrap mb-1">
-                  <h1 className="font-heading text-2xl lg:text-3xl font-semibold">
+                  <h1 className="font-heading text-2xl lg:text-3xl font-semibold text-white">
                     {user?.full_name || "Scholar"}
                   </h1>
                   <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 ${
                     user?.role === "researcher"
-                      ? "bg-[#B45309]/20 text-amber-300"
+                      ? "bg-[#C79A52]/18 text-[#F0DFB4] border border-[#C79A52]/40"
                       : user?.role === "lecturer"
-                      ? "bg-purple-600/30 text-purple-300"
-                      : "bg-blue-600/30 text-blue-300"
+                      ? "bg-[#8A7A5C]/25 text-[#E8DCC0] border border-[#C79A52]/30"
+                      : "bg-[#2E3A4F]/60 text-[#CFD8E6] border border-[#C79A52]/25"
                   }`}>
                     {user?.role === "researcher"
                       ? <><Beaker className="w-3 h-3" /> {t.roleResearcher}</>
@@ -256,7 +263,7 @@ export default function Profile() {
                     }
                   </span>
                 </div>
-                <p className="text-slate-300 text-sm mb-0.5">{user?.email}</p>
+                <p className="text-[#E2DDD0] text-sm mb-0.5">{user?.email}</p>
                 {editing ? (
                   <div className="mt-3 flex flex-col gap-2">
                     <input
@@ -266,7 +273,7 @@ export default function Profile() {
                       value={editForm.university}
                       onChange={(e) => setEditForm((f) => ({ ...f, university: e.target.value }))}
                       placeholder={t.universityPlaceholder}
-                      className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2563EB] w-full max-w-xs"
+                      className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#D9B36C] w-full max-w-xs"
                     />
                     <select
                       aria-label={lang === "de" ? "Rolle" : "Role"}
@@ -284,7 +291,7 @@ export default function Profile() {
                       value={editForm.orcid_id}
                       onChange={(e) => setEditForm((f) => ({ ...f, orcid_id: e.target.value.replace(/https?:\/\/orcid\.org\//i, "").trim() }))}
                       placeholder="ORCID: 0000-0001-2345-6789"
-                      className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2563EB] font-mono w-full max-w-xs"
+                      className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#D9B36C] font-mono w-full max-w-xs"
                     />
                     <input
                       type="text"
@@ -293,9 +300,9 @@ export default function Profile() {
                       value={editForm.username}
                       onChange={(e) => setEditForm((f) => ({ ...f, username: e.target.value }))}
                       placeholder={lang === "de" ? "Öffentlicher Nutzername (z.B. max-mustermann)" : "Public username (e.g. john-doe)"}
-                      className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#2563EB] w-full max-w-xs"
+                      className="px-3 py-1.5 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-[#D9B36C] w-full max-w-xs"
                     />
-                    <p className="text-xs text-slate-300 max-w-xs">
+                    <p className="text-xs text-[#E2DDD0] max-w-xs">
                       {lang === "de"
                         ? "Verwende deinen echten Namen als öffentlichen Nutzernamen, damit Anmeldename und URL identisch sind (z.B. Filip_Sudermann)."
                         : "Use your real name as your public username so your login name and URL match (e.g. Filip_Sudermann)."}
@@ -304,7 +311,7 @@ export default function Profile() {
                       <button
                         onClick={handleSave}
                         disabled={saving}
-                        className="px-3 py-1.5 text-xs bg-[#2563EB] text-white rounded-lg hover:bg-blue-700 flex items-center gap-1"
+                        className="px-3 py-1.5 text-xs bg-[#C79A52] text-[#1A1206] rounded-lg hover:bg-[#D9B36C] flex items-center gap-1"
                       >
                         {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                         {t.saveChanges}
@@ -320,7 +327,7 @@ export default function Profile() {
                 ) : (
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {user?.university && (
-                      <p className="text-slate-300 text-sm">{user.university}</p>
+                      <p className="text-[#E2DDD0] text-sm">{user.university}</p>
                     )}
                     {user?.orcid_id && (
                       <a
@@ -337,7 +344,7 @@ export default function Profile() {
                       type="button"
                       onClick={() => setEditing(true)}
                       aria-label={lang === "de" ? "Profil bearbeiten" : "Edit profile"}
-                      className="p-1.5 -m-1.5 text-slate-300 hover:text-white transition-colors"
+                      className="p-1.5 -m-1.5 text-[#E2DDD0] hover:text-white transition-colors"
                     >
                       <Edit3 className="w-4 h-4" aria-hidden="true" />
                     </button>
@@ -350,39 +357,40 @@ export default function Profile() {
             <div className="text-center lg:text-right">
               <div className="inline-flex flex-col items-center lg:items-end">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <Award className="w-5 h-5 text-[#B45309]" />
-                  <span className="text-xs text-slate-300 uppercase tracking-wider">{t.knowledgePoints}</span>
+                  <Award className="w-5 h-5 text-[#D9B36C]" aria-hidden="true" />
+                  <span className="text-xs text-[#E2DDD0] uppercase tracking-[0.16em]">{t.knowledgePoints}</span>
                 </div>
-                <p className="font-heading text-4xl lg:text-5xl font-bold text-white tabular-nums">
+                <p className="font-heading text-4xl lg:text-5xl font-bold text-[#F0DFB4] tabular-nums">
                   <AnimatedCounter value={user?.points || 0} />
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-white/10">
-            <div className="text-center">
+          {/* Stats Row — the carved register */}
+          <div className="ph-register grid grid-cols-3 mt-8 pt-7 border-t border-[#C79A52]/30">
+            <div className="text-center px-1.5 sm:px-3">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">
                 {presentations.length}
               </p>
-              <p className="text-xs text-slate-300 mt-0.5">{t.publications}</p>
+              <p className="text-[10px] sm:text-[11px] text-[#E2DDD0] mt-1 uppercase tracking-[0.06em] sm:tracking-[0.14em] leading-tight">{t.publications}</p>
             </div>
-            <div className="text-center">
+            <div className="text-center px-1.5 sm:px-3">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">
                 {totalDownloads}
               </p>
-              <p className="text-xs text-slate-300 mt-0.5">{t.downloads}</p>
+              <p className="text-[10px] sm:text-[11px] text-[#E2DDD0] mt-1 uppercase tracking-[0.06em] sm:tracking-[0.14em] leading-tight">{t.downloads}</p>
             </div>
-            <div className="text-center">
+            <div className="text-center px-1.5 sm:px-3">
               <p className="font-heading text-2xl lg:text-3xl font-bold text-white tabular-nums">
                 {avgRating > 0 ? avgRating.toFixed(1) : "—"}
               </p>
-              <p className="text-xs text-slate-300 mt-0.5">{t.avgRating}</p>
+              <p className="text-[10px] sm:text-[11px] text-[#E2DDD0] mt-1 uppercase tracking-[0.06em] sm:tracking-[0.14em] leading-tight">{t.avgRating}</p>
             </div>
           </div>
+         </div>
         </div>
-      </div>
+      </AlexandriaBanner>
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -390,13 +398,18 @@ export default function Profile() {
         {chartData.length > 0 && (
           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
             <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="w-5 h-5 text-[#2563EB]" aria-hidden="true" />
-              <h2 className="font-heading text-lg font-semibold text-[#0F172A]">
+              <TrendingUp className="w-5 h-5 text-[#9A7638]" aria-hidden="true" />
+              <h2 className="ph-rule font-heading text-lg font-semibold text-[#0F172A]">
                 {t.performanceOverview}
               </h2>
             </div>
             {/* The chart is visual only; the table carries the same numbers for screen readers (WCAG 1.1.1). */}
-            <table className="sr-only">
+            {/* sr-only on the <table> itself does not contain it: width:1px
+               is only a minimum for table layout, so the cells pushed the
+               page 426px wide and it scrolled sideways on a phone. A block
+               wrapper honours the width and the overflow. */}
+            <div className="sr-only">
+            <table>
               <caption>{t.performanceOverview}</caption>
               <thead><tr><th scope="col">{lang === "de" ? "Präsentation" : "Presentation"}</th><th scope="col">Downloads</th></tr></thead>
               <tbody>
@@ -405,6 +418,7 @@ export default function Profile() {
                 ))}
               </tbody>
             </table>
+            </div>
             <div className="h-52" aria-hidden="true">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} barCategoryGap="30%">
@@ -422,18 +436,18 @@ export default function Profile() {
                   />
                   <Tooltip
                     contentStyle={{
-                      background: "#1E293B",
+                      background: "#1A1206",
                       border: "none",
                       borderRadius: "8px",
                       color: "#fff",
                       fontSize: "12px",
                     }}
-                    cursor={{ fill: "rgba(37,99,235,0.07)" }}
+                    cursor={{ fill: "rgba(154,118,56,0.08)" }}
                     formatter={(value) => [value, lang === "de" ? "Downloads" : "Downloads"]}
                   />
                   <Bar dataKey="downloads" radius={[4, 4, 0, 0]}>
                     {chartData.map((_, i) => (
-                      <Cell key={i} fill={i === 0 ? "#2563EB" : "#93c5fd"} />
+                      <Cell key={i} fill={i === 0 ? "#9A7638" : "#D3BE8E"} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -445,8 +459,8 @@ export default function Profile() {
         {/* Presentations */}
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="font-heading text-lg font-semibold text-[#0F172A] flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-[#2563EB]" />
+            <h2 className="ph-rule font-heading text-lg font-semibold text-[#0F172A] flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-[#9A7638]" aria-hidden="true" />
               {t.myPublications}
             </h2>
             <Link
@@ -527,8 +541,8 @@ export default function Profile() {
         {/* Public Profile */}
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <Link2 className="w-5 h-5 text-[#2563EB]" />
-            <h2 className="font-heading text-lg font-semibold text-[#0F172A]">
+            <Link2 className="w-5 h-5 text-[#9A7638]" aria-hidden="true" />
+            <h2 className="ph-rule font-heading text-lg font-semibold text-[#0F172A]">
               {lang === "de" ? "Öffentliches Profil" : "Public Profile"}
             </h2>
           </div>
