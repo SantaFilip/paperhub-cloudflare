@@ -23,6 +23,7 @@ import Profile from '@/pages/Profile';
 import PublicProfile from '@/pages/PublicProfile';
 import { LanguageProvider } from '@/lib/LanguageContext';
 import RouteA11y from '@/components/a11y/RouteA11y';
+import ConsentBanner from '@/components/ConsentBanner';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -69,6 +70,7 @@ function App() {
         <QueryClientProvider client={queryClientInstance}>
           <Router>
             <RouteA11y />
+            <ConsentBanner />
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/landing" element={<Navigate to="/" replace />} />
