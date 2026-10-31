@@ -27,6 +27,10 @@ export const ENTITIES = {
     },
     required: ["title", "doi", "discipline", "license"],
     read: "public",
+    // Licences under which a record is visible to its uploader only. The
+    // archive lists what it is allowed to pass on; an upload that grants no
+    // licence at all stays on the uploader's own profile.
+    ownerOnlyLicenses: ["All Rights Reserved"],
     create: "auth",
     write: "owner_or_admin",
   },
@@ -120,9 +124,31 @@ function assertCanWrite(entity, user, row) {
 
 /** Extra WHERE clause enforcing read visibility (public / own records / admin). */
 function readScope(entity, user) {
-  if (entity.read === "public" || isAdmin(user)) return { sql: "", params: [] };
-  if (!user) throw unauthorized();
-  return { sql: " AND (created_by_id = ? OR user_id = ?)", params: [user.id, user.id] };
+  if (isAdmin(user)) return { sql: "", params: [] };
+
+  const sql = [];
+  const params = [];
+
+  if (entity.read !== "public") {
+    if (!user) throw unauthorized();
+    sql.push(" AND (created_by_id = ? OR user_id = ?)");
+    params.push(user.id, user.id);
+  }
+
+  // Rows whose licence keeps them off the public listing. Applied here rather
+  // than in the pages, so a direct API call cannot list them either.
+  if (entity.ownerOnlyLicenses?.length) {
+    const platzhalter = entity.ownerOnlyLicenses.map(() => "?").join(", ");
+    if (user) {
+      sql.push(` AND (license NOT IN (${platzhalter}) OR created_by_id = ?)`);
+      params.push(...entity.ownerOnlyLicenses, user.id);
+    } else {
+      sql.push(` AND license NOT IN (${platzhalter})`);
+      params.push(...entity.ownerOnlyLicenses);
+    }
+  }
+
+  return { sql: sql.join(""), params };
 }
 
 function buildFilter(entity, filter) {

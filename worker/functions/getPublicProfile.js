@@ -1,7 +1,7 @@
 // Public profile page data — the /u/:identifier route.
 // Reads users directly (bypassing RLS) but only ever emits public fields.
 
-import { serviceRole } from "../lib/entities.js";
+import { ENTITIES, serviceRole } from "../lib/entities.js";
 import { badRequest, json, readJson } from "../lib/util.js";
 
 const looksLikeId = (value) =>
@@ -33,11 +33,16 @@ export default async function getPublicProfile(request, env) {
     return json({ found: true, private: true, name, username });
   }
 
-  const presentations = await serviceRole.list(env, "Presentations", {
+  // serviceRole deliberately bypasses the read scope, so the owner-only
+  // licence rule has to be applied again here — otherwise a stranger's view
+  // of this profile would list what the browse page already hides.
+  const alle = await serviceRole.list(env, "Presentations", {
     filter: { uploader_id: user.id },
     sort: "-created_date",
     limit: 50,
   });
+  const nurEigene = ENTITIES.Presentations.ownerOnlyLicenses || [];
+  const presentations = alle.filter((p) => !nurEigene.includes(p.license));
 
   return json({
     found: true,
