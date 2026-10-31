@@ -5,7 +5,7 @@
 // the `rls` blocks of the original Base44 entity schemas one-to-one.
 
 import { badRequest, forbidden, newId, notFound, nowIso, unauthorized } from "./util.js";
-import { hidesThumbnail } from "../../src/lib/licenseUtils.js";
+import { OWNER_ONLY_LICENSES, hidesThumbnail } from "../../src/lib/licenseUtils.js";
 
 const BOOL = "bool";
 const NUM = "num";
@@ -30,7 +30,7 @@ export const ENTITIES = {
     // Licences under which a record is visible to its uploader only. The
     // archive lists what it is allowed to pass on; an upload that grants no
     // licence at all stays on the uploader's own profile.
-    ownerOnlyLicenses: ["All Rights Reserved"],
+    ownerOnlyLicenses: OWNER_ONLY_LICENSES,
     create: "auth",
     write: "owner_or_admin",
   },

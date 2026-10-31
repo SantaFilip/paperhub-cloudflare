@@ -5,6 +5,7 @@ import PresentationCard from "@/components/PresentationCard";
 import { useLang, disciplineLabelDE, paperTypeLabelDE } from "@/lib/LanguageContext";
 import { Search, ChevronDown, Loader2, BookOpen } from "lucide-react";
 import { AlexandriaBanner, AlexandriaBackdrop } from "@/components/AlexandriaScene";
+import { OWNER_ONLY_LICENSES } from "@/lib/licenseUtils";
 
 const DISCIPLINES = [
   "Machine Learning", "Computer Science", "Physics", "Chemistry",
@@ -39,7 +40,14 @@ export default function Browse() {
 
   const { data: presentations = [], isLoading: loading } = useQuery({
     queryKey: ["presentations", "browse"],
-    queryFn: () => api.entities.Presentations.list("-created_date", 100),
+    // The worker already withholds these from everyone else. It still hands
+    // them to their own uploader, so that the profile can load them — but this
+    // is the public listing, so they are dropped here as well. That makes it a
+    // display choice, not a security one: the viewer is allowed to see them.
+    queryFn: async () => {
+      const alle = await api.entities.Presentations.list("-created_date", 100);
+      return alle.filter((p) => !OWNER_ONLY_LICENSES.includes(p.license));
+    },
     staleTime: 5 * 60 * 1000,
   });
 

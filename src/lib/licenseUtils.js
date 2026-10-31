@@ -145,3 +145,10 @@ export function blocksDownload(presentation) {
   if (presentation.license === "All Rights Reserved") return true;
   return presentation.has_nd_restriction === true || presentation.has_nd_restriction === 1;
 }
+
+/**
+ * Licences whose uploads stay off the public listing. The worker enforces this
+ * for everyone but the uploader; the browse page drops the uploader's own as
+ * well, so that "not public" means the same thing to them as to a visitor.
+ */
+export const OWNER_ONLY_LICENSES = ["All Rights Reserved"];
