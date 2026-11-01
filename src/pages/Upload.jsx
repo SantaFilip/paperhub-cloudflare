@@ -393,9 +393,9 @@ export default function Upload() {
       license: form.license,
       tags: form.tags.trim(),
       video_url: form.video_url.trim() || undefined,
-      uploader_id: user ? user.id : null,
-      uploader_name: user ? (user.full_name || user.email) : "Anonymous",
-      uploader_university: form.institution.trim() || (user ? (user.university || "") : ""),
+      // uploader_id and uploader_name are set by the worker from the token.
+      // Institution falls back to the account's university there as well.
+      uploader_university: form.institution.trim(),
       ai_generated_content: aiGenerated,
       is_author: isAuthor && authorshipVerified,
       authorship_verified: isAuthor && authorshipVerified,

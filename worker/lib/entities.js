@@ -31,6 +31,11 @@ export const ENTITIES = {
     // archive lists what it is allowed to pass on; an upload that grants no
     // licence at all stays on the uploader's own profile.
     ownerOnlyLicenses: OWNER_ONLY_LICENSES,
+    // Who uploaded a record is decided by the token, not by the client. The
+    // upload page used to send these itself, from a user it had fetched on
+    // load; when that fetch had come back empty, an authenticated upload was
+    // stored as "Anonymous" with no uploader_id — and lost its edit button.
+    uploaderFields: true,
     create: "auth",
     write: "owner_or_admin",
   },
@@ -230,6 +235,12 @@ export async function createRecord(env, name, data, user = null) {
     const value = toDbValue(type, data[col]);
     if (value !== undefined) record[col] = value;
   }
+  // Service-role writes carry no real user; they keep what they were given.
+  if (entity.uploaderFields && user?.id) {
+    record.uploader_id = user.id;
+    record.uploader_name = user.full_name || user.email;
+    if (!record.uploader_university) record.uploader_university = user.university || "";
+  }
   for (const field of entity.required) {
     if (record[field] === undefined || record[field] === null || record[field] === "") {
       throw badRequest(`Missing required field: ${field}`);
@@ -259,6 +270,9 @@ export async function updateRecord(env, name, id, data, user = null) {
     const value = toDbValue(type, data[col]);
     if (value !== undefined) updates[col] = value;
   }
+  // Ownership is set once, at upload. Letting an owner rewrite uploader_id
+  // would let them hang their record on someone else's profile.
+  if (entity.uploaderFields && !isAdmin(user)) delete updates.uploader_id;
   const cols = Object.keys(updates);
   await env.DB.prepare(`UPDATE ${entity.table} SET ${cols.map((c) => `${c} = ?`).join(", ")} WHERE id = ?`)
     .bind(...cols.map((c) => updates[c]), id)

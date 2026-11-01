@@ -118,8 +118,10 @@ export default function PresentationDetail() {
   const [editLicense, setEditLicense] = useState("");
   const [editHandout, setEditHandout] = useState(null);
   const [editThumbnail, setEditThumbnail] = useState(null);
+  const [editTags, setEditTags] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [editSuccess, setEditSuccess] = useState(false);
+  const [editError, setEditError] = useState(null);
 
   const addEditExtra = () => setEditExtraPapers((prev) => [...prev, { doi: "", title: "" }]);
   const removeEditExtra = (i) => setEditExtraPapers((prev) => prev.filter((_, idx) => idx !== i));
@@ -370,7 +372,9 @@ export default function PresentationDetail() {
     setSubmittingComment(false);
   };
 
-  const isOwner = user && presentation && user.id === presentation.uploader_id;
+  // created_by_id is what the worker authorises writes against; uploader_id is
+  // display data and was empty on some uploads, which hid the edit panel.
+  const isOwner = user && presentation && user.id === (presentation.created_by_id || presentation.uploader_id);
 
   const handleSaveEdit = async () => {
     // Validate extra papers
@@ -378,24 +382,38 @@ export default function PresentationDetail() {
     if (invalidExtra) return;
 
     setSavingEdit(true);
+    setEditError(null);
     const updates = {};
     if (editDiscipline && editDiscipline !== presentation.discipline) updates.discipline = editDiscipline;
     if (editPaperType !== (presentation.paper_type || "")) updates.paper_type = editPaperType || null;
     updates.license = editLicense;
     updates.extra_papers = editExtraPapers.filter((p) => p.doi.trim() && p.title.trim());
-    if (editHandout) {
-      const res = await api.integrations.Core.UploadFile({ file: editHandout });
-      updates.handout_url = res.file_url;
-      updates.handout_status = "approved";
-      updates.handout_uploaded_at = new Date().toISOString();
-      updates.handout_uploaded_by = user?.id || null;
-      updates.handout_downloads = 0;
+    // Same handling as on upload: free text, trimmed.
+    if (editTags.trim() !== (presentation.tags || "")) updates.tags = editTags.trim();
+    try {
+      if (editHandout) {
+        const res = await api.integrations.Core.UploadFile({ file: editHandout });
+        updates.handout_url = res.file_url;
+        updates.handout_status = "approved";
+        updates.handout_uploaded_at = new Date().toISOString();
+        updates.handout_uploaded_by = user?.id || null;
+        updates.handout_downloads = 0;
+      }
+      if (editThumbnail && !hidesThumbnail(editLicense)) {
+        const res = await api.integrations.Core.UploadFile({ file: editThumbnail });
+        updates.thumbnail_url = res.file_url;
+      }
+      await api.entities.Presentations.update(presentation.id, updates);
+    } catch {
+      // Without this the button kept spinning and nothing said the save had failed.
+      setEditError(
+        lang === "de"
+          ? "Die Änderungen konnten nicht gespeichert werden. Bitte versuche es erneut."
+          : "Your changes could not be saved. Please try again."
+      );
+      setSavingEdit(false);
+      return;
     }
-    if (editThumbnail && !hidesThumbnail(editLicense)) {
-      const res = await api.integrations.Core.UploadFile({ file: editThumbnail });
-      updates.thumbnail_url = res.file_url;
-    }
-    await api.entities.Presentations.update(presentation.id, updates);
     setPresentation((p) => ({ ...p, ...updates }));
     setSavingEdit(false);
     setEditOpen(false);
@@ -405,6 +423,7 @@ export default function PresentationDetail() {
     setEditPaperType("");
     setEditLicense("");
     setEditExtraPapers([]);
+    setEditTags("");
     setEditSuccess(true);
     setTimeout(() => setEditSuccess(false), 2500);
   };
@@ -719,6 +738,8 @@ export default function PresentationDetail() {
                       setEditPaperType(presentation.paper_type || "");
                       setEditLicense(presentation.license || "CC0 1.0");
                       setEditExtraPapers(presentation.extra_papers ? [...presentation.extra_papers] : []);
+                      setEditTags(presentation.tags || "");
+                      setEditError(null);
                     }}
                     className="inline-flex items-center gap-2 px-5 py-3 border border-slate-200 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors min-h-[44px]"
                   >
@@ -826,6 +847,24 @@ export default function PresentationDetail() {
                     ))}
                   </div>
 
+                  {/* Tags */}
+                  <div className="space-y-1.5">
+                    <label htmlFor="edit-tags" className="block text-sm font-medium text-[#0F172A]">{t.tagsLabel} <span className="text-slate-600 font-normal text-xs">(optional)</span></label>
+                    <p id="edit-tags-hint" className="text-xs text-slate-600">{t.tagsHint}</p>
+                    <div className="relative">
+                      <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" aria-hidden="true" />
+                      <input
+                        id="edit-tags"
+                        aria-describedby="edit-tags-hint"
+                        type="text"
+                        value={editTags}
+                        onChange={(e) => setEditTags(e.target.value)}
+                        placeholder="Jurassic, carbon cycle, geochemistry"
+                        className="w-full pl-10 pr-4 py-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB] bg-white"
+                      />
+                    </div>
+                  </div>
+
                   {/* Thumbnail — not offered for licences that forbid a preview image */}
                   {hidesThumbnail(editLicense) ? (
                   <p className="text-xs text-slate-600 p-3 bg-slate-50 border border-slate-200 rounded-lg">
@@ -870,6 +909,15 @@ export default function PresentationDetail() {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  <div role="alert" aria-live="assertive">
+                    {editError && (
+                      <p className="flex items-center gap-2 text-sm text-red-700">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                        {editError}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex justify-end gap-3">
