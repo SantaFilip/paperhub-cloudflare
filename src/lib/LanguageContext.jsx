@@ -3,9 +3,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 const DISCIPLINES_EN = [
   "Machine Learning", "Computer Science", "Physics", "Chemistry",
   "Biology", "Mathematics", "Medicine", "Engineering", "Social Sciences",
-  "Economics", "Psychology", "Neuroscience", "Environmental Sciences",
+  "Business & Economics", "Psychology", "Neuroscience", "Environmental Sciences",
   "Earth Sciences", "Materials Science", "Astronomy & Astrophysics",
-  "Philosophy", "History & Humanities", "Law", "Public Health", "Linguistics", "Other"
+  "Philosophy", "History", "Humanities", "Law", "Public Health", "Linguistics", "Other"
 ];
 
 const DISCIPLINES_DE = [
@@ -13,7 +13,7 @@ const DISCIPLINES_DE = [
   "Biologie", "Mathematik", "Medizin", "Ingenieurwesen", "Sozialwissenschaften",
   "Wirtschaftswissenschaften", "Psychologie", "Neurowissenschaften", "Umweltwissenschaften",
   "Geowissenschaften", "Materialwissenschaften", "Astronomie & Astrophysik",
-  "Philosophie", "Geschichte & Geisteswissenschaften", "Rechtswissenschaften", "Public Health", "Linguistik", "Sonstiges"
+  "Philosophie", "Geschichte", "Geisteswissenschaften", "Rechtswissenschaften", "Public Health", "Linguistik", "Sonstiges"
 ];
 
 const PAPER_TYPES_EN = [

@@ -14,9 +14,9 @@ const DOI_REGEX_CHECK = DOI_REGEX;
 const DISCIPLINES = [
   "Machine Learning", "Computer Science", "Physics", "Chemistry",
   "Biology", "Mathematics", "Medicine", "Engineering", "Social Sciences",
-  "Economics", "Psychology", "Neuroscience", "Environmental Sciences",
+  "Business & Economics", "Psychology", "Neuroscience", "Environmental Sciences",
   "Earth Sciences", "Materials Science", "Astronomy & Astrophysics",
-  "Philosophy", "History & Humanities", "Law", "Public Health", "Linguistics", "Other"
+  "Philosophy", "History", "Humanities", "Law", "Public Health", "Linguistics", "Other"
 ];
 
 const PAPER_TYPES = [
