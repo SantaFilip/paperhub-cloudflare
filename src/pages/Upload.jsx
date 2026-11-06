@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "@/api/client";
 import { Link } from "react-router-dom";
-import { useLang, disciplineLabelDE, paperTypeLabelDE } from "@/lib/LanguageContext";
+import { useLang, disciplineLabelDE, paperTypeLabelDE, DISCIPLINES } from "@/lib/LanguageContext";
 import { Upload as UploadIcon, FileText, Link2, Tag, BookOpen, Video, CheckCircle, AlertCircle, Loader2, Image, FileDown, Plus, Trash2, Sparkles } from "lucide-react";
 import AuthorshipVerifier from "@/components/AuthorshipVerifier";
 import ReferenceLicenseScanner from "@/components/ReferenceLicenseScanner";
@@ -11,13 +11,6 @@ import { AlexandriaBackdrop, AlexandriaBooks } from "@/components/AlexandriaScen
 const DOI_REGEX = /^10\.\d{4,}\/.+/;
 const DOI_REGEX_CHECK = DOI_REGEX;
 
-const DISCIPLINES = [
-  "Machine Learning", "Computer Science", "Physics", "Chemistry",
-  "Biology", "Mathematics", "Medicine", "Engineering", "Social Sciences",
-  "Business & Economics", "Psychology", "Neuroscience", "Environmental Sciences",
-  "Earth Sciences", "Materials Science", "Astronomy & Astrophysics",
-  "Philosophy", "History", "Humanities", "Law", "Public Health", "Linguistics", "Other"
-];
 
 const PAPER_TYPES = [
   "Original Research", "Review", "Meta-Analysis", "Case Study", "Conference Paper", "Other"

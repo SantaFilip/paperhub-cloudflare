@@ -3,7 +3,7 @@ import { api, getToken } from "@/api/client";
 import { Link, useNavigate } from "react-router-dom";
 import StarRating from "@/components/StarRating";
 import DoiLink from "@/components/DoiLink";
-import { useLang, disciplineLabelDE } from "@/lib/LanguageContext";
+import { useLang, disciplineLabelDE, DISCIPLINES } from "@/lib/LanguageContext";
 import { ExternalLink, Play, ArrowLeft, Loader2,
   MessageSquare, User, Calendar, Tag, BookOpen, Send,
   Pencil, X, CheckCircle, Image, FileDown, Plus, Trash2, Archive, AlertCircle, Link2, Flag, Sparkles
@@ -56,13 +56,6 @@ function ExtraPaperRow({ index, doi, title, onUpdate, onRemove }) {
   );
 }
 
-const DISCIPLINES = [
-  "Machine Learning", "Computer Science", "Physics", "Chemistry",
-  "Biology", "Mathematics", "Medicine", "Engineering", "Social Sciences",
-  "Business & Economics", "Psychology", "Neuroscience", "Environmental Sciences",
-  "Earth Sciences", "Materials Science", "Astronomy & Astrophysics",
-  "Philosophy", "History", "Humanities", "Law", "Public Health", "Linguistics", "Other"
-];
 
 const PAPER_TYPES = [
   "Original Research", "Review", "Meta-Analysis", "Case Study", "Conference Paper", "Other"

@@ -2,18 +2,11 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import PresentationCard from "@/components/PresentationCard";
-import { useLang, disciplineLabelDE, paperTypeLabelDE } from "@/lib/LanguageContext";
+import { useLang, disciplineLabelDE, paperTypeLabelDE, DISCIPLINES } from "@/lib/LanguageContext";
 import { Search, ChevronDown, Loader2, BookOpen } from "lucide-react";
 import { AlexandriaBanner, AlexandriaBackdrop } from "@/components/AlexandriaScene";
 import { OWNER_ONLY_LICENSES } from "@/lib/licenseUtils";
 
-const DISCIPLINES = [
-  "Machine Learning", "Computer Science", "Physics", "Chemistry",
-  "Biology", "Mathematics", "Medicine", "Engineering", "Social Sciences",
-  "Business & Economics", "Psychology", "Neuroscience", "Environmental Sciences",
-  "Earth Sciences", "Materials Science", "Astronomy & Astrophysics",
-  "Philosophy", "History", "Humanities", "Law", "Public Health", "Linguistics", "Other"
-];
 
 const PAPER_TYPES = [
   "Original Research", "Review", "Meta-Analysis", "Case Study", "Conference Paper", "Other"

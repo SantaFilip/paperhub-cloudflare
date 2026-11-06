@@ -2,18 +2,24 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const DISCIPLINES_EN = [
   "Machine Learning", "Computer Science", "Physics", "Chemistry",
-  "Biology", "Mathematics", "Medicine", "Engineering", "Social Sciences",
-  "Business & Economics", "Psychology", "Neuroscience", "Environmental Sciences",
+  "Biology", "Mathematics", "Medicine", "Engineering", "Sociology & Anthropology",
+  "Political Science & International Relations", "Business & Management", "Economics",
+  "Psychology", "Neuroscience", "Environmental Sciences", "Agricultural & Food Sciences",
   "Earth Sciences", "Materials Science", "Astronomy & Astrophysics",
-  "Philosophy", "History", "Humanities", "Law", "Public Health", "Linguistics", "Other"
+  "Philosophy", "Religious Studies & Theology", "History", "Literature & Cultural Studies",
+  "Arts & Design", "Music & Musicology", "Communication & Media Studies", "Education",
+  "Law", "Public Health", "Linguistics", "Other"
 ];
 
 const DISCIPLINES_DE = [
   "Maschinelles Lernen", "Informatik", "Physik", "Chemie",
-  "Biologie", "Mathematik", "Medizin", "Ingenieurwesen", "Sozialwissenschaften",
-  "Wirtschaftswissenschaften", "Psychologie", "Neurowissenschaften", "Umweltwissenschaften",
+  "Biologie", "Mathematik", "Medizin", "Ingenieurwesen", "Soziologie & Anthropologie",
+  "Politikwissenschaft & Internationale Beziehungen", "Betriebswirtschaft & Management", "Volkswirtschaftslehre",
+  "Psychologie", "Neurowissenschaften", "Umweltwissenschaften", "Agrar- & Lebensmittelwissenschaften",
   "Geowissenschaften", "Materialwissenschaften", "Astronomie & Astrophysik",
-  "Philosophie", "Geschichte", "Geisteswissenschaften", "Rechtswissenschaften", "Public Health", "Linguistik", "Sonstiges"
+  "Philosophie", "Religionswissenschaft & Theologie", "Geschichte", "Literatur- & Kulturwissenschaften",
+  "Kunst & Design", "Musik & Musikwissenschaft", "Kommunikations- & Medienwissenschaft", "Bildungswissenschaften",
+  "Rechtswissenschaften", "Public Health", "Linguistik", "Sonstiges"
 ];
 
 const PAPER_TYPES_EN = [
@@ -23,6 +29,9 @@ const PAPER_TYPES_EN = [
 const PAPER_TYPES_DE = [
   "Originalforschung", "Übersichtsartikel", "Meta-Analyse", "Fallstudie", "Konferenzbeitrag", "Sonstiges"
 ];
+
+// Single source for the discipline list (Browse filter, Upload and edit forms).
+export const DISCIPLINES = DISCIPLINES_EN;
 
 // Maps from English value → German label (for display only)
 export const disciplineLabelDE = Object.fromEntries(DISCIPLINES_EN.map((en, i) => [en, DISCIPLINES_DE[i]]));
