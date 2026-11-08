@@ -26,7 +26,10 @@ const FUNCTIONS = {
   extractFileText: { handler: extractFileText, auth: true },
   extractPptxThumbnail: { handler: extractPptxThumbnail, auth: true },
   lookupPaperLicense: { handler: lookupPaperLicense, auth: true },
-  downloadPresentation: { handler: downloadPresentation, auth: false },
+  // GET serves a signed, short-lived download link so the browser can fetch the
+  // file as an ordinary navigation — the only way a download reliably reaches
+  // iOS Safari and Android. See worker/functions/downloadPresentation.js.
+  downloadPresentation: { handler: downloadPresentation, auth: false, methods: ["POST", "GET"] },
   getPublicProfile: { handler: getPublicProfile, auth: false },
 };
 
@@ -154,7 +157,7 @@ async function handleEntities(request, env, segments) {
 async function handleFunction(request, env, name) {
   const entry = FUNCTIONS[name];
   if (!entry) throw notFound(`Unknown function: ${name}`);
-  if (request.method !== "POST") throw new HttpError(405, "Method not allowed");
+  if (!(entry.methods || ["POST"]).includes(request.method)) throw new HttpError(405, "Method not allowed");
 
   const user = entry.auth ? await requireUser(request, env) : await getUser(request, env);
   return entry.handler(request, env, user);

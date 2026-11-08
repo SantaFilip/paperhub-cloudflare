@@ -24,6 +24,13 @@ custom_domain = true
 directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
+# The SPA fallback runs *before* the Worker and answers anything it does not
+# recognise with index.html — but only for requests that ask for HTML. A fetch()
+# sends Accept: */* and reaches the Worker, so the API appeared to work; a
+# browser *navigation* sends Accept: text/html and was handed index.html
+# instead. That silently broke the signed download link, which is a navigation
+# by design, and would do the same for anyone opening a /files/ URL directly.
+run_worker_first = ["/api/*", "/files/*"]
 
 [[d1_databases]]
 binding = "DB"

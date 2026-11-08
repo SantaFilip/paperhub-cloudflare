@@ -271,8 +271,18 @@ export default function PresentationDetail() {
     setDownloadError(null);
 
     try {
-      // Fetched directly rather than through the client: the response is a ZIP
-      // blob, not JSON.
+      // The POST records the consent and returns a short-lived signed URL; the
+      // browser then fetches the file as an ordinary navigation.
+      //
+      // It used to read the response as a Blob and click a generated
+      // <a download>. Desktop Chrome starts that download synchronously, so
+      // revoking the object URL on the next line was harmless there — but
+      // mobile browsers hand the download to a download manager
+      // asynchronously, and the revoked blob was gone before they read it. iOS
+      // Safari ignores the download attribute on blob: URLs regardless. The
+      // request reached the server either way, so the counter went up while no
+      // file ever arrived. A navigation to a Content-Disposition: attachment
+      // response is saved by every browser's own download manager.
       const token = getToken();
       const resp = await fetch("/api/functions/downloadPresentation", {
         method: "POST",
@@ -280,20 +290,14 @@ export default function PresentationDetail() {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ presentation_id: presentation.id, mode }),
+        body: JSON.stringify({ presentation_id: presentation.id, mode, deliver: "url" }),
       });
 
       if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
 
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${presentation.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const { download_url: downloadUrl } = await resp.json();
+      if (!downloadUrl) throw new Error("No download URL returned");
+      window.location.assign(downloadUrl);
 
       // Update local state to reflect incremented counts
       const downloadUpdates = { downloads: (presentation.downloads || 0) + 1 };

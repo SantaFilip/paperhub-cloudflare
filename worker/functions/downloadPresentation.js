@@ -1,13 +1,35 @@
 // Packages a presentation as a ZIP with its licence paperwork, records the
 // consent, and bumps the download counters. Anonymous downloads are allowed —
 // presentations are public.
+//
+// Two steps, because a mobile browser cannot be handed a file the way a desktop
+// one can:
+//
+//   POST  { presentation_id, mode, deliver: "url" }
+//         Records the consent, bumps the counters, and returns a short-lived
+//         signed URL. No file in the response.
+//   GET   ?t=<token>
+//         Verifies the token and streams the ZIP. Writes nothing, so a browser
+//         may retry or prefetch it without double-counting a download.
+//
+// The client then navigates to that URL. Because the response carries
+// Content-Disposition: attachment, every browser — iOS Safari included — saves
+// it with its own download manager. The previous approach built a Blob and
+// clicked a generated <a download>: Chrome on a desktop starts that download
+// synchronously, but mobile browsers hand it off asynchronously, so revoking
+// the object URL in the same tick killed it. iOS Safari also ignores the
+// download attribute on blob: URLs outright.
+//
+// A POST without `deliver` still answers with the ZIP itself, so anything that
+// called this endpoint directly keeps working.
 
 import JSZip from "jszip";
 import { getLicenseDetails } from "../../src/lib/licenseDetails.js";
 import { blocksDownload } from "../../src/lib/licenseUtils.js";
+import { signToken, verifyToken } from "../lib/auth.js";
 import { serviceRole } from "../lib/entities.js";
 import { readStoredFile } from "../lib/files.js";
-import { HttpError, badRequest, forbidden, notFound, nowIso, readJson } from "../lib/util.js";
+import { HttpError, badRequest, forbidden, json, notFound, nowIso, readJson } from "../lib/util.js";
 
 const CC_URLS = {
   "CC0 1.0": "https://creativecommons.org/publicdomain/zero/1.0/",
@@ -19,13 +41,15 @@ const CC_URLS = {
   "CC BY-NC-ND 4.0": "https://creativecommons.org/licenses/by-nc-nd/4.0/",
 };
 
+// Long enough for a slow phone to follow the redirect, short enough that a
+// leaked URL is worthless. The link grants no more than the public endpoint.
+const LINK_TTL_SECONDS = 300;
+
 const dateOnly = (iso) => (iso ? new Date(iso).toISOString().split("T")[0] : "");
 
-export default async function downloadPresentation(request, env, user) {
-  const { presentation_id, mode } = await readJson(request);
-  if (!presentation_id) throw badRequest("presentation_id required");
-
-  const rows = await serviceRole.list(env, "Presentations", { filter: { id: presentation_id }, limit: 1 });
+async function loadPresentation(env, presentationId) {
+  if (!presentationId) throw badRequest("presentation_id required");
+  const rows = await serviceRole.list(env, "Presentations", { filter: { id: presentationId }, limit: 1 });
   const presentation = rows[0];
   if (!presentation) throw notFound("Presentation not found");
   // The detail page hides the button for these; refuse here too, so calling
@@ -34,34 +58,24 @@ export default async function downloadPresentation(request, env, user) {
     throw forbidden("This presentation may not be downloaded under its licence");
   }
   if (!presentation.file_url) throw badRequest("No file available");
+  return presentation;
+}
 
-  const dlMode = mode || "presentation";
+/**
+ * Builds the ZIP.
+ *
+ * `actor` is who the paperwork names. On the GET leg it comes from the token
+ * rather than the request: a browser navigation carries no Authorization
+ * header, so reading the user from the request there would record every
+ * signed-in download as "Anonymous".
+ */
+async function buildZip(env, presentation, { mode, actor, timestamp, licenseId }) {
   const appUrl = (env.APP_URL || "https://paperhub.io").replace(/\/$/, "");
-  const downloadTimestamp = nowIso();
-
-  await serviceRole.create(env, "DownloadConsents", {
-    presentation_id: presentation.id,
-    user_id: user?.id || null,
-    user_name: user?.full_name || user?.email || "Anonymous",
-    license: presentation.license || "CC0 1.0",
-    download_mode: dlMode,
-    timestamp: downloadTimestamp,
-  });
-
-  const downloadUpdates = { downloads: (presentation.downloads || 0) + 1 };
-  if (dlMode === "handout" || dlMode === "both") {
-    downloadUpdates.handout_downloads = (presentation.handout_downloads || 0) + 1;
-  }
-  await serviceRole.update(env, "Presentations", presentation.id, downloadUpdates);
-
-  // --- licence paperwork ---
-
   const uploadYear = presentation.created_date
     ? new Date(presentation.created_date).getFullYear()
     : new Date().getFullYear();
   const uploaderStr = presentation.uploader_name || "Anonymous";
   const license = presentation.license || "Unknown";
-  const licenseId = `PH-${presentation.id.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
 
   // The full terms travel with the file, in both site languages, so the licence
   // stays attached to the download and not only to the preview page.
@@ -125,9 +139,9 @@ export default async function downloadPresentation(request, env, user) {
       : `Licensed under ${license}. Attribution required.`,
     ``,
     `--- Download Record ---`,
-    `Downloaded by: ${user ? user.full_name || user.email || user.id : "Anonymous"}`,
-    `User-ID:       ${user?.id || "n/a"}`,
-    `Timestamp:     ${downloadTimestamp}`,
+    `Downloaded by: ${actor.name || "Anonymous"}`,
+    `User-ID:       ${actor.id || "n/a"}`,
+    `Timestamp:     ${timestamp}`,
     ``,
     `This record serves as proof of license acceptance.`,
     `PaperHub — ${appUrl}`,
@@ -146,15 +160,13 @@ export default async function downloadPresentation(request, env, user) {
     inLanguage: "en",
     publisher: { "@type": "Organization", name: "PaperHub" },
     paperhub_license_id: licenseId,
-    paperhub_downloaded_by: user?.id || "anonymous",
-    paperhub_download_timestamp: downloadTimestamp,
+    paperhub_downloaded_by: actor.id || "anonymous",
+    paperhub_download_timestamp: timestamp,
   };
-
-  // --- ZIP ---
 
   const zip = new JSZip();
 
-  if (dlMode === "presentation" || dlMode === "both") {
+  if (mode === "presentation" || mode === "both") {
     const content = await readStoredFile(env, presentation.file_url);
     // Better a clear error than a ZIP containing a broken file.
     if (!content) throw new HttpError(502, "The presentation file could not be read");
@@ -162,7 +174,7 @@ export default async function downloadPresentation(request, env, user) {
     zip.file(`presentation.${ext}`, content);
   }
 
-  if ((dlMode === "handout" || dlMode === "both") && presentation.handout_url) {
+  if ((mode === "handout" || mode === "both") && presentation.handout_url) {
     const handout = await readStoredFile(env, presentation.handout_url);
     if (!handout) throw new HttpError(502, "The handout file could not be read");
     zip.file("handout.pdf", handout);
@@ -199,6 +211,80 @@ export default async function downloadPresentation(request, env, user) {
     headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="${baseName}.zip"`,
+      // The link is single-purpose and short-lived; nothing should cache it.
+      "Cache-Control": "no-store",
     },
+  });
+}
+
+/** GET leg: hand over the file for a token the POST leg issued. Writes nothing. */
+async function serveSignedLink(request, env) {
+  const token = new URL(request.url).searchParams.get("t");
+  if (!token) throw badRequest("Missing download token");
+  const payload = await verifyToken(token, env.JWT_SECRET);
+  if (!payload || payload.purpose !== "download") {
+    throw new HttpError(410, "This download link has expired. Please start the download again.");
+  }
+  const presentation = await loadPresentation(env, payload.pid);
+  return buildZip(env, presentation, {
+    mode: payload.mode,
+    actor: { id: payload.uid || null, name: payload.uname || "Anonymous" },
+    timestamp: payload.ts,
+    licenseId: payload.lid,
+  });
+}
+
+export default async function downloadPresentation(request, env, user) {
+  if (request.method === "GET") return serveSignedLink(request, env);
+
+  const { presentation_id, mode, deliver } = await readJson(request);
+  const presentation = await loadPresentation(env, presentation_id);
+
+  const dlMode = mode || "presentation";
+  const downloadTimestamp = nowIso();
+  const licenseId = `PH-${presentation.id.slice(0, 8).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
+  const actor = { id: user?.id || null, name: user?.full_name || user?.email || "Anonymous" };
+
+  await serviceRole.create(env, "DownloadConsents", {
+    presentation_id: presentation.id,
+    user_id: user?.id || null,
+    user_name: actor.name,
+    license: presentation.license || "CC0 1.0",
+    download_mode: dlMode,
+    timestamp: downloadTimestamp,
+  });
+
+  const downloadUpdates = { downloads: (presentation.downloads || 0) + 1 };
+  if (dlMode === "handout" || dlMode === "both") {
+    downloadUpdates.handout_downloads = (presentation.handout_downloads || 0) + 1;
+  }
+  await serviceRole.update(env, "Presentations", presentation.id, downloadUpdates);
+
+  if (deliver === "url") {
+    const token = await signToken(
+      {
+        purpose: "download",
+        pid: presentation.id,
+        mode: dlMode,
+        uid: actor.id,
+        uname: actor.name,
+        ts: downloadTimestamp,
+        lid: licenseId,
+      },
+      env.JWT_SECRET,
+      LINK_TTL_SECONDS
+    );
+    return json({
+      download_url: `/api/functions/downloadPresentation?t=${encodeURIComponent(token)}`,
+      expires_in: LINK_TTL_SECONDS,
+    });
+  }
+
+  // Legacy path: answer with the ZIP itself.
+  return buildZip(env, presentation, {
+    mode: dlMode,
+    actor,
+    timestamp: downloadTimestamp,
+    licenseId,
   });
 }

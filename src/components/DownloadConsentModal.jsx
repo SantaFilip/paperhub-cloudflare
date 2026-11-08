@@ -175,30 +175,44 @@ export default function DownloadConsentModal({ presentation, mode, onConfirm, on
             <span className="text-sm text-slate-800 leading-snug">{checkboxLabel}</span>
           </label>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 px-4 py-2.5 min-h-[44px] text-sm text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-            >
-              {lang === "de" ? "Abbrechen" : "Cancel"}
-            </button>
-            <button
-              type="button"
-              onClick={() => checked && onConfirm()}
-              disabled={!checked}
-              className="flex-1 px-4 py-2.5 min-h-[44px] text-sm font-medium text-white bg-[#2563EB] rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {lang === "de" ? "Herunterladen" : "Download"}
-            </button>
-          </div>
+          {/* Actions. Sticky, because on a 375x667 phone the licence text pushed
+              this row to y=700 in a 667px-tall viewport: the buttons existed but
+              sat below the fold, and a user had to scroll 216px inside the dialog
+              to reach them. The hint replaces the silence of a disabled button —
+              tapping it did nothing and said nothing. */}
+          <div className="sticky bottom-0 bg-white pt-3 -mb-1">
+            {!checked && (
+              <p id="download-consent-hint" className="text-xs text-[#B45309] text-center mb-2">
+                {lang === "de"
+                  ? "Bitte bestätige zuerst die Lizenzbedingungen."
+                  : "Please accept the licence terms first."}
+              </p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="flex-1 px-4 py-2.5 min-h-[44px] text-sm text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                {lang === "de" ? "Abbrechen" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={() => checked && onConfirm()}
+                disabled={!checked}
+                aria-describedby={checked ? undefined : "download-consent-hint"}
+                className="flex-1 px-4 py-2.5 min-h-[44px] text-sm font-medium text-white bg-[#2563EB] rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {lang === "de" ? "Herunterladen" : "Download"}
+              </button>
+            </div>
 
-          <p className="text-xs text-slate-600 text-center mt-3">
-            {lang === "de"
-              ? "Deine Zustimmung wird mit Zeitstempel gespeichert."
-              : "Your consent is recorded with a timestamp."}
-          </p>
+            <p className="text-xs text-slate-600 text-center mt-3 pb-1">
+              {lang === "de"
+                ? "Deine Zustimmung wird mit Zeitstempel gespeichert."
+                : "Your consent is recorded with a timestamp."}
+            </p>
+          </div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
