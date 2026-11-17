@@ -167,10 +167,28 @@ async function main() {
     return;
   }
 
-  const email = process.env.PAPERHUB_EMAIL;
-  const password = process.env.PAPERHUB_PASSWORD;
+  // Secrets pasted from a password manager or a note often carry a trailing line break or spaces.
+  const rawEmail = process.env.PAPERHUB_EMAIL || "";
+  const rawPassword = process.env.PAPERHUB_PASSWORD || "";
+  const email = rawEmail.trim();
+  const password = rawPassword.replace(/[\r\n]+$/, "");
   if (!email || !password) throw new Error("PAPERHUB_EMAIL and PAPERHUB_PASSWORD must be set (repository secrets)");
-  const login = await api("/api/auth/login", { method: "POST", json: { email, password } });
+  if (email !== rawEmail) console.log("Note: removed spaces/line breaks around PAPERHUB_EMAIL.");
+  if (password !== rawPassword) console.log("Note: removed a trailing line break from PAPERHUB_PASSWORD.");
+  if (!email.includes("@")) throw new Error("PAPERHUB_EMAIL does not look like an e-mail address");
+  let login;
+  try {
+    login = await api("/api/auth/login", { method: "POST", json: { email, password } });
+  } catch (error) {
+    if (/HTTP 401/.test(error.message)) {
+      throw new Error(
+        "PaperHub rejected the login (401). Check that you can sign in on paperhub.io with exactly these " +
+          "credentials, then update the PAPERHUB_EMAIL / PAPERHUB_PASSWORD repository secrets." +
+          (password !== password.trim() ? " The password starts or ends with a space – intended?" : "")
+      );
+    }
+    throw error;
+  }
   const session = { token: login.access_token, me: await api("/api/auth/me", { token: login.access_token }) };
   console.log(`Signed in as ${session.me.full_name || "the PaperHub account"}; ${pending.length} package(s) queued.`);
 
