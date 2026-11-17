@@ -112,6 +112,23 @@ UPDATE presentations SET
   thumbnail_url = replace(thumbnail_url, 'https://paperhub.tight-art-4025.workers.dev', 'https://paperhub.io')"
 ```
 
+## Publishing reviewed decks via GitHub
+
+Decks from the Paper Deck Pipeline can be published without a browser: put a package into
+`publish-queue/<slug>/` (`paperhub-package.json` plus the PPTX, handout PDF and thumbnail it names, as
+exported by the pipeline) and push to `main`. The workflow `.github/workflows/publish-presentations.yml`
+runs `scripts/publish-presentation.mjs`, which
+
+- checks every file against the reviewed SHA-256 in the manifest,
+- refuses papers whose licence (via `lookupPaperLicense`) is not CC BY or CC0/public domain,
+- skips DOIs the account has already published,
+- uploads the three files, creates the presentation and reads it back,
+- writes `published.json` with the presentation URL and removes the binaries from the folder.
+
+It needs two repository secrets (Settings → Secrets and variables → Actions): `PAPERHUB_EMAIL` and
+`PAPERHUB_PASSWORD` of the account the decks appear under. "Run workflow" with *dry run* validates packages
+and licences without uploading. Locally: `PAPERHUB_EMAIL=… PAPERHUB_PASSWORD=… node scripts/publish-presentation.mjs`.
+
 ## Making yourself an admin
 
 Admin rights gate destructive edits on other people's uploads:
