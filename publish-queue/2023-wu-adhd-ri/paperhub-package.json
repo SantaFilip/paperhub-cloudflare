@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "doi": "10.3389/fpsyt.2023.1099882",
+  "title": "The clinical, neuropsychological, and brain functional characteristics of the ADHD restrictive inattentive presentation",
+  "paper_title": "The clinical, neuropsychological, and brain functional characteristics of the ADHD restrictive inattentive presentation",
+  "discipline": "Psychology",
+  "paper_type": "Original Research",
+  "tags": "Attention Deficit Hyperactivity Disorder, Psychiatry and Mental health",
+  "presentation_license": "CC BY 4.0",
+  "ai_generated_content": true,
+  "deck_fingerprint": "edd66cca5acc7a112da6537bcc104d076ca7de8a63bbf3f173ac2edc0f770c60",
+  "assets_fingerprint": "2d1ff9a5a4b06d1b617cdeaeea508cb0f9c72dd68a129e667b56843e17d9da27",
+  "files": {
+    "pptx": {
+      "name": "wu-2023-adhd-ri.pptx",
+      "sha256": "6c53d052903fc2984b876d1063c0466e96009339a6bb2c7a91fe8dbf737d40fe"
+    },
+    "handout": {
+      "name": "wu-2023-adhd-ri-handout.pdf",
+      "sha256": "8ee08fe6dea1968b889e6398249e09ad7d9bf24938be43c355f57b3768d86a6a"
+    },
+    "thumb": {
+      "name": "wu-2023-adhd-ri-thumbnail.jpg",
+      "sha256": "83eda9936c4be8285d5990fb70f15473204c2a6303bb3beb4e8a2fec47147c0d"
+    }
+  }
+}

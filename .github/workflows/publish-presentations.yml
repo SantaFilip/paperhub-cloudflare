@@ -1,0 +1,53 @@
+name: Publish presentations
+
+# Publishes reviewed decks from publish-queue/ to paperhub.io (scripts/publish-presentation.mjs).
+# Needs two repository secrets: PAPERHUB_EMAIL and PAPERHUB_PASSWORD (the account the decks appear under).
+
+on:
+  push:
+    branches: [main]
+    paths: ["publish-queue/**"]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only validate packages and licences, upload nothing"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-presentations
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Publish queued packages
+        env:
+          PAPERHUB_EMAIL: ${{ secrets.PAPERHUB_EMAIL }}
+          PAPERHUB_PASSWORD: ${{ secrets.PAPERHUB_PASSWORD }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '0' }}
+        run: node scripts/publish-presentation.mjs publish-queue
+
+      - name: Record what was published
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add -A publish-queue
+          if git diff --cached --quiet; then
+            echo "Nothing to record."
+          else
+            git commit -m "Publish queue: record published presentations [skip ci]"
+            git push
+          fi
